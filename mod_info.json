@@ -1,0 +1,10 @@
+{
+    "id": "rolflection_lib",
+    "name": "RolflectionLib",
+    "author": "rolfos",
+    "version": "0.0.1",
+    "description": "Crude library for reflection in Starsector",
+    "gameVersion": "0.98a-RC8",
+    "modPlugin": "rolflectionlib.plugins.RolfLectionLibPlugin",
+    "jars": ["./jars/RolflectionLibJAR.jar"]
+}
