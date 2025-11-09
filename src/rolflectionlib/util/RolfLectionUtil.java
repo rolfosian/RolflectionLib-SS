@@ -132,9 +132,9 @@ public class RolfLectionUtil {
                     String fieldName = (String) getFieldNameHandle.invoke(field);
                     Object variable = getPrivateVariableFromSuperClass(fieldName, original);
                     if (variable == original) {
-                        setpublicVariableFromSuperclass(fieldName, template, template);
+                        setPrivateVariableFromSuperclass(fieldName, template, template);
                     } else {
-                        setpublicVariableFromSuperclass(fieldName, template, variable);
+                        setPrivateVariableFromSuperclass(fieldName, template, variable);
                     }
                 }
             }
@@ -146,15 +146,15 @@ public class RolfLectionUtil {
                 Object variable = getPrivateVariable(field, original);
                 if (isExactClass) {
                     if (variable == original) {
-                        setpublicVariable(field, template, template);
+                        setPrivateVariable(field, template, template);
                     } else {
-                        setpublicVariable(field, template, variable);
+                        setPrivateVariable(field, template, variable);
                     }
                 } else {
                     if (variable == original) {
-                        setpublicVariableByName((String)getFieldNameHandle.invoke(field), template, template);
+                        setPrivateVariableByName((String)getFieldNameHandle.invoke(field), template, template);
                     } else {
-                        setpublicVariableByName((String)getFieldNameHandle.invoke(field), template, variable);
+                        setPrivateVariableByName((String)getFieldNameHandle.invoke(field), template, variable);
                     }
                 }
             }
@@ -192,7 +192,7 @@ public class RolfLectionUtil {
         return lst;
     }
 
-    public static void setpublicVariableByName(String fieldName, Object instanceToModify, Object newValue) throws Throwable {
+    public static void setPrivateVariableByName(String fieldName, Object instanceToModify, Object newValue) throws Throwable {
         Object field = instanceToModify.getClass().getDeclaredField(fieldName);
         setFieldAccessibleHandle.invoke(field, true);
         setFieldHandle.invoke(field, instanceToModify, newValue);
@@ -298,7 +298,7 @@ public class RolfLectionUtil {
         }
     }
 
-    public static void setpublicVariable(Object field, Object instanceToModify, Object newValue) {
+    public static void setPrivateVariable(Object field, Object instanceToModify, Object newValue) {
         try {
             setFieldAccessibleHandle.invoke(field, true);
             setFieldHandle.invoke(field, instanceToModify, newValue);
@@ -307,7 +307,7 @@ public class RolfLectionUtil {
         }
     }
 
-    public static void setpublicVariableFromSuperclass(String fieldName, Object instanceToModify, Object newValue) {
+    public static void setPrivateVariableFromSuperclass(String fieldName, Object instanceToModify, Object newValue) {
         try {
             Class<?> instances = instanceToModify.getClass();
             while (instances != null) {
@@ -672,13 +672,13 @@ public class RolfLectionUtil {
     public static Object getMethodFromSuperClassAndInvokeDirectly(String methodName, Object instance, Object... arguments) {
         Object method = getMethodFromSuperclass(methodName, instance);
         if (method == null) return null;
-        return invokepublicMethodDirectly(method, instance, arguments);
+        return invokePrivateMethodDirectly(method, instance, arguments);
     }
 
     public static Object getMethodExplicitFromSuperClassAndInvokeDirectly(String methodName, Object instance, Class<?>[] targetParamTypes, Object... arguments) {
         Object method = getMethodExplicitFromSuperclass(methodName, targetParamTypes, instance);
         if (method == null) return null;
-        return invokepublicMethodDirectly(method, instance, arguments);
+        return invokePrivateMethodDirectly(method, instance, arguments);
     }
 
     public static Object getMethodAndInvokeDirectly(String methodName, Object instance, int argumentsNum, Object... arguments) {
@@ -690,7 +690,7 @@ public class RolfLectionUtil {
     public static Object getMethodDeclaredAndInvokeDirectly(String methodName, Object instance, int argumentsNum, Object... arguments) {
         Object method = getMethodDeclared(methodName, instance.getClass(), argumentsNum);
         if (method == null) return null;
-        return invokepublicMethodDirectly(method, instance, arguments);
+        return invokePrivateMethodDirectly(method, instance, arguments);
     }
 
     public static Object getMethodExplicitAndInvokeDirectly(String methodName, Object instance, Class<?>[] parameterTypes, Object... arguments) {
@@ -715,7 +715,7 @@ public class RolfLectionUtil {
         }
     }
 
-    public static Object invokepublicMethodDirectly(Object method, Object instance, Object... arguments) {
+    public static Object invokePrivateMethodDirectly(Object method, Object instance, Object... arguments) {
         try {
             setMethodAccessible.invoke(method, true);
             return invokeMethodHandle.invoke(method, instance, arguments);
@@ -724,7 +724,8 @@ public class RolfLectionUtil {
         }
     }
 
-    public static Object invokeNonpublicMethodDirectly(Object method, Object instance, Object... arguments) {
+    // ???????? WAT
+    public static Object invokeNonPublicMethodDirectly(Object method, Object instance, Object... arguments) {
         try {
             if (isPublic((int)getModifiersHandle.invoke(method))) return null;
             return invokeMethodHandle.invoke(method, instance, arguments);
