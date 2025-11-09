@@ -2,6 +2,7 @@ package rolflectionlib.plugins;
 
 import java.util.*;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.BaseCampaignEventListener;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 
@@ -12,14 +13,37 @@ public class RolfLectionLibListener extends BaseCampaignEventListener{
         public void afterOptionSelected(Object optionData);
     }
 
-    private static List<OptionPanelHook> optionPanelHooks = new ArrayList<>();
+    private List<OptionPanelHook> optionPanelHooks = new ArrayList<>();
 
     public static void addOptionPanelHook(OptionPanelHook hook) {
-        optionPanelHooks.add(hook);
+        List<RolfLectionLibListener> listeners = Global.getSector().getListenerManager().getListeners(RolfLectionLibListener.class);
+        
+        if (listeners == null || listeners.isEmpty()) {
+            RolfLectionLibListener listener = new RolfLectionLibListener(false);
+
+            Global.getSector().addTransientListener(listener);
+            listener.addOptionPanelHook(hook, true);
+
+        } else {
+            RolfLectionLibListener listener = listeners.get(0);
+            listener.addOptionPanelHook(hook, true);
+        }
+    }
+
+    protected void addOptionPanelHook(OptionPanelHook hook, boolean bool) {
+        this.optionPanelHooks.add(hook);
+    }
+
+    protected void removeOptionPanelHook(OptionPanelHook hook, boolean bool) {
+        this.optionPanelHooks.remove(hook);
     }
 
     public static void removeOptionPanelHook(OptionPanelHook hook) {
-        optionPanelHooks.remove(hook);
+        List<RolfLectionLibListener> listeners = Global.getSector().getListenerManager().getListeners(RolfLectionLibListener.class);
+        if (listeners != null && !listeners.isEmpty()) {
+            RolfLectionLibListener listener = listeners.get(0);
+            listener.removeOptionPanelHook(hook, true);
+        }
     }
 
     public RolfLectionLibListener(boolean permaRegister) {
