@@ -1,5 +1,6 @@
 package rolflectionlib.inheritor.enginetex;
 
+import java.awt.Color;
 import java.util.Arrays;
 
 import org.apache.log4j.Logger;
@@ -235,6 +236,19 @@ public class AstralTestDelegate extends EngineTexDelegate {
             return true;
         }
     }
+
+    private void christmastralLights(int current) {
+        for (int i = 0; i < engineSlots.size(); i++) {
+            if (i != current) {
+                engineSlots.get(i).setColor(Color.GREEN);
+                engineSlots.get(i).setContrailColor(Color.GREEN);
+                engineSlots.get(i).setGlowAlternateColor(Color.GREEN);
+            }
+        }
+        engineSlots.get(current).setColor(Color.RED);
+        engineSlots.get(current).setContrailColor(Color.RED);
+        engineSlots.get(current).setGlowAlternateColor(Color.RED);
+    }
     
     @Override
     public void onTexBind(int current, boolean isRolloverEngine) {
@@ -249,6 +263,7 @@ public class AstralTestDelegate extends EngineTexDelegate {
             currentTexIdsIdx = (currentTexIdsIdx + incr) % engineTexOrder.length;
 
             texWrapper.setTexIds(this.engineTexOrder[currentTexIdsIdx]);
+            this.christmastralLights(currentTexIdsIdx);
         }
     }
 
