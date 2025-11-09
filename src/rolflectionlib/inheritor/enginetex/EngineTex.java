@@ -42,7 +42,7 @@ public class EngineTex {
 
     private static Class<?> engineGlowClass;
     private static Object engineGlowTexField;
-    private static Object engineGlowTexFieldSmall;
+    private static Object engineGlowSmoothTexField;
 
     static {
         try {
@@ -90,9 +90,9 @@ public class EngineTex {
                         engineGlowTexField = field;
                         RolfLectionUtil.setFieldAccessibleHandle.invoke(engineGlowTexField, true);
 
-                    } else if (engineGlowTexFieldSmall == null) {
-                        engineGlowTexFieldSmall = field;
-                        RolfLectionUtil.setFieldAccessibleHandle.invoke(engineGlowTexFieldSmall, true);
+                    } else if (engineGlowSmoothTexField == null) {
+                        engineGlowSmoothTexField = field;
+                        RolfLectionUtil.setFieldAccessibleHandle.invoke(engineGlowSmoothTexField, true);
 
                     }
                 }
@@ -125,7 +125,7 @@ public class EngineTex {
             delegate.setTexWrapper(ourTexInheritor);
     
             RolfLectionUtil.setFieldHandle.invoke(engineGlowTexField, engineGlow, ourTexInheritor);
-            RolfLectionUtil.setFieldHandle.invoke(engineGlowTexFieldSmall, engineGlow, ourTexInheritor);
+            RolfLectionUtil.setFieldHandle.invoke(engineGlowSmoothTexField, engineGlow, ourTexInheritor);
             
             return ourTexInheritor;
 
@@ -149,7 +149,7 @@ public class EngineTex {
             EngineTexInterface ourTexInheritor = instantiateEngineTex(textures, engines);
     
             RolfLectionUtil.setFieldHandle.invoke(engineGlowTexField, engineGlow, ourTexInheritor);
-            RolfLectionUtil.setFieldHandle.invoke(engineGlowTexFieldSmall, engineGlow, ourTexInheritor);
+            RolfLectionUtil.setFieldHandle.invoke(engineGlowSmoothTexField, engineGlow, ourTexInheritor);
             
             return ourTexInheritor;
 
@@ -175,7 +175,7 @@ public class EngineTex {
             delegate.setTexWrapper(ourTexInheritor);
     
             RolfLectionUtil.setFieldHandle.invoke(engineGlowTexField, engineGlow, ourTexInheritor);
-            RolfLectionUtil.setFieldHandle.invoke(engineGlowTexFieldSmall, engineGlow, ourTexInheritor);
+            RolfLectionUtil.setFieldHandle.invoke(engineGlowSmoothTexField, engineGlow, ourTexInheritor);
 
             return ourTexInheritor;
 
@@ -199,7 +199,7 @@ public class EngineTex {
             EngineTexInterface ourTexInheritor = instantiateEngineTex(textures, engines);
     
             RolfLectionUtil.setFieldHandle.invoke(engineGlowTexField, engineGlow, ourTexInheritor);
-            RolfLectionUtil.setFieldHandle.invoke(engineGlowTexFieldSmall, engineGlow, ourTexInheritor);
+            RolfLectionUtil.setFieldHandle.invoke(engineGlowSmoothTexField, engineGlow, ourTexInheritor);
 
             return ourTexInheritor;
 
@@ -226,7 +226,7 @@ public class EngineTex {
             delegate.setTexWrapper(ourTexInheritor);
     
             RolfLectionUtil.setFieldHandle.invoke(engineGlowTexField, engineGlow, ourTexInheritor);
-            RolfLectionUtil.setFieldHandle.invoke(engineGlowTexFieldSmall, engineGlow, ourTexInheritor);
+            RolfLectionUtil.setFieldHandle.invoke(engineGlowSmoothTexField, engineGlow, ourTexInheritor);
 
             return ourTexInheritor;
 
