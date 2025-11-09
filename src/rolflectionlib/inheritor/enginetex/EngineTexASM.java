@@ -288,16 +288,18 @@ public class EngineTexASM implements Opcodes {
 
         // Override texBindMethodName
         // public void texBindMethodName() {
+        //     boolean isRollover = false;
         //     if (rolflectionlib.plugins.RolfLectionLibPlugin.frame != this.lastUsedFrame) {
         //         this.incrementer = 0;
         //         this.lastUsedFrame = rolflectionlib.plugins.RolfLectionLibPlugin.frame;
+        //         isRollover = true;
         //     }
         //
         //     while (!this.engines.get(incrementer).isActive()) {
         //         this.incrementer = (this.incrementer + this.increments) % increments;
         //     }
         //
-        //     this.engineTexDelegate.onTexBind(incrementer);
+        //     this.engineTexDelegate.onTexBind(incrementer, isRollover);
         //
         //     rolflectionlib.util.TexReflection.setTexId(this, this.texIds[this.incrementer]);
         //     super.texBindMethodName();
