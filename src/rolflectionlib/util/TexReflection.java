@@ -15,6 +15,7 @@ public class TexReflection {
     public static Object texClassCtor;
     public static Object texObjectIdField;
     public static Object texObjectGLBindField;
+    public static Object texObjectBindMethod;
     public static Class<?> texClass;
 
     public static Map<String, Object> texObjectMap;
@@ -118,6 +119,53 @@ public class TexReflection {
         }
     }
 
+    public static int[] getTexIds(Object[] texWrappers) {
+        try {
+            int[] result = new int[texWrappers.length];
+            for (int i = 0; i < texWrappers.length; i++) {
+                result[i] = (int) RolfLectionUtil.getFieldHandle.invoke(texObjectIdField, texWrappers[i]);
+            }
+
+            return result;
+
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static int[][] getTexOrder(String[][] order) {
+        int len = order.length;
+        int[][] result = new int[len][];
+
+        for (int i = 0; i < len; i++) {
+            result[i] = getTexIds(order[i]);
+        }
+        return result;
+    }
+
+    public static int getTexId(String texPath) {
+        try {
+            return (int) RolfLectionUtil.getFieldHandle.invoke(texObjectIdField, texObjectMap.get(texPath));
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static int[] getTexIds(String[] texPaths) {
+        try {
+            int[] result = new int[texPaths.length];
+
+            for (int i = 0; i < texPaths.length; i++) {
+                result[i] = (int) RolfLectionUtil.getFieldHandle.invoke(texObjectIdField, texObjectMap.get(texPaths[i]));
+            }
+
+            return result;
+
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Object instantiateTexObj(int glBindType, int texId) {
         try {
             return RolfLectionUtil.constructorNewInstanceHandle.invoke(texClassCtor, glBindType, texId);
@@ -127,6 +175,7 @@ public class TexReflection {
     }
 
     public static Object getTexBindMethod() {
+        if (texObjectBindMethod != null) return texObjectBindMethod;
         Object texWrapper = instantiateTexObj(GL11.GL_TEXTURE_2D, 42069);
 
         try {
@@ -139,6 +188,8 @@ public class TexReflection {
                     RolfLectionUtil.invokeMethodHandle.invoke(method, texWrapper);
                     if (getBoundTexture() == 42069) {
                         GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+                        
+                        texObjectBindMethod = method;
                         return method;
                     }
                 }

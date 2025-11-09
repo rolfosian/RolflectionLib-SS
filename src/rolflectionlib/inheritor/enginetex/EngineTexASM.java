@@ -305,6 +305,9 @@ public class EngineTexASM implements Opcodes {
         // }
         MethodVisitor bind = cw.visitMethod(ACC_PUBLIC, texBindMethodName, "()V", null, null);
         bind.visitCode();
+        // boolean isRolloverEngine = false
+        bind.visitInsn(ICONST_0); // Push false
+        bind.visitVarInsn(ISTORE, 1); // Store in local variable 1 (isRolloverEngine)
         
         // if (RolfLectionLibPlugin.frame != this.lastUsedFrame) {
         Label ifEnd = new Label();
@@ -317,6 +320,10 @@ public class EngineTexASM implements Opcodes {
         bind.visitVarInsn(ALOAD, 0);
         bind.visitInsn(ICONST_0);
         bind.visitFieldInsn(PUTFIELD, internalName, "incrementer", "I");
+
+        // isRolloverEngine = true
+        bind.visitInsn(ICONST_1); // Push true
+        bind.visitVarInsn(ISTORE, 1); // Store in local variable 1 (isRolloverEngine)
         
         //     this.lastUsedFrame = RolfLectionLibPlugin.frame;
         bind.visitVarInsn(ALOAD, 0);
@@ -364,6 +371,24 @@ public class EngineTexASM implements Opcodes {
         // Loop back
         bind.visitJumpInsn(GOTO, whileStart);
         bind.visitLabel(whileEnd);
+
+        // if (this.engineTexDelegate != null) {
+        //     this.engineTexDelegate.onTexBind(this.incrementer);
+        // }
+        Label delegateNull = new Label();
+        bind.visitVarInsn(ALOAD, 0); // Load this
+        bind.visitFieldInsn(GETFIELD, internalName, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;"); // Load engineTexDelegate
+        bind.visitJumpInsn(IFNULL, delegateNull); // if (engineTexDelegate == null) goto delegateNull
+        
+        // Call onTexBind(incrementer, isRolloverEngine)
+        bind.visitVarInsn(ALOAD, 0); // Load this
+        bind.visitFieldInsn(GETFIELD, internalName, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;"); // Load engineTexDelegate
+        bind.visitVarInsn(ALOAD, 0); // Load this
+        bind.visitFieldInsn(GETFIELD, internalName, "incrementer", "I"); // Load incrementer
+        bind.visitVarInsn(ILOAD, 1); // Load isRolloverEngine
+        bind.visitMethodInsn(INVOKEVIRTUAL, "rolflectionlib/inheritor/enginetex/EngineTexDelegate", "onTexBind", "(IZ)V", false);
+        
+        bind.visitLabel(delegateNull);
         
         // TexReflection.setTexId(this, this.texIds[this.incrementer]);
         bind.visitVarInsn(ALOAD, 0); // Load this
@@ -373,23 +398,6 @@ public class EngineTexASM implements Opcodes {
         bind.visitFieldInsn(GETFIELD, internalName, "incrementer", "I"); // Load incrementer
         bind.visitInsn(IALOAD); // Load texIds[incrementer]
         bind.visitMethodInsn(INVOKESTATIC, "rolflectionlib/util/TexReflection", "setTexId", "(Ljava/lang/Object;I)V", false);
-        
-        // if (this.engineTexDelegate != null) {
-        //     this.engineTexDelegate.onTexBind(this.incrementer);
-        // }
-        Label delegateNull = new Label();
-        bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;"); // Load engineTexDelegate
-        bind.visitJumpInsn(IFNULL, delegateNull); // if (engineTexDelegate == null) goto delegateNull
-        
-        // Call onTexBind(incrementer)
-        bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;"); // Load engineTexDelegate
-        bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "incrementer", "I"); // Load incrementer
-        bind.visitMethodInsn(INVOKEVIRTUAL, "rolflectionlib/inheritor/enginetex/EngineTexDelegate", "onTexBind", "(I)V", false);
-        
-        bind.visitLabel(delegateNull);
         
         // super.texBindMethodName();
         bind.visitVarInsn(ALOAD, 0);

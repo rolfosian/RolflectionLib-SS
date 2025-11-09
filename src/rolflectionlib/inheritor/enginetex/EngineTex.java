@@ -112,6 +112,28 @@ public class EngineTex {
         }
     }
 
+    public static EngineTexInterface setEngineTextures(ShipAPI shipApi, EngineTexDelegate delegate) {
+        try {
+
+            Object engineController = getEngineControllerHandle.invoke(shipApi);
+            Object engineGlow = getEngineGlowHandle.invoke(engineController);
+    
+            List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
+            delegate.setEngines(engines);
+            
+            EngineTexInterface ourTexInheritor = instantiateEngineTex(delegate.getTexIds(0), engines, delegate);
+            delegate.setTexWrapper(ourTexInheritor);
+    
+            RolfLectionUtil.setFieldHandle.invoke(engineGlowTexField, engineGlow, ourTexInheritor);
+            RolfLectionUtil.setFieldHandle.invoke(engineGlowTexFieldSmall, engineGlow, ourTexInheritor);
+            
+            return ourTexInheritor;
+
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static EngineTexInterface instantiateEngineTex(int[] intTexIds, List<Object> engines) {
         return (EngineTexInterface) RolfLectionUtil.instantiateClass(engineTexClassCtorOne, GL11.GL_TEXTURE_2D, 0, intTexIds, engines);
     }
@@ -211,8 +233,9 @@ public class EngineTex {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
-
     }
+
+
 
     public static void init() {}
 }

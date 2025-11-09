@@ -8,12 +8,12 @@ import com.fs.starfarer.api.combat.ShipEngineControllerAPI.ShipEngineAPI;
 
 public abstract class EngineTexDelegate {
     protected List<ShipEngineAPI> engines = new ArrayList<>();
-    protected List<EngineSlotAPI> engineSlots;
+    protected List<EngineSlotAPI> engineSlots = new ArrayList<>();
 
     protected EngineTexInterface texWrapper = null;
-    protected int[] texIds = null;
+    protected int[][] engineTexOrder;
 
-    public abstract void onTexBind(int currentEngine);
+    public abstract void onTexBind(int currentEngine, boolean isRolloverEngine);
 
     public List<ShipEngineAPI> getEngines() {
         return this.engines;
@@ -30,8 +30,8 @@ public abstract class EngineTexDelegate {
     protected void setEngines(List<Object> engines) {
         for (Object eng : engines) {
             ShipEngineAPI engine = (ShipEngineAPI) eng;
-            engines.add(engine);
-            engineSlots.add(engine.getEngineSlot());
+            this.engines.add(engine);
+            this.engineSlots.add(engine.getEngineSlot());
         }
     }
 
@@ -39,7 +39,8 @@ public abstract class EngineTexDelegate {
         this.texWrapper = texWrapper;
     }
 
-    public void setTexIds(int[] texIds) {
-        this.texIds = texIds;
+    public int[] getTexIds(int idx) {
+        if (this.engineTexOrder == null) return null;
+        return this.engineTexOrder[idx];
     }
 }
