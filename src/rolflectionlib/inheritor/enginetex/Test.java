@@ -13,4 +13,14 @@ public class Test {
             }
         }
     }
+
+    public static void run(boolean with10CR) {
+        for (ShipAPI ship : Global.getCombatEngine().getShips()) {
+            if (ship.getOwner() == 0) {
+                engineTex = EngineTex.setEngineTextures(ship, new AstralTestDelegate());
+                if (with10CR) ship.setCurrentCR(0.1f);
+                return;
+            }
+        }
+    }
 }
