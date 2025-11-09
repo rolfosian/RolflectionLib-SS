@@ -51,6 +51,7 @@ Write-Host "Compiling Java sources..."
 $sourceFiles = Get-ChildItem -Path ".\src" -Filter "*.java" -Recurse
 $javacArgs = @(
     "-encoding", "UTF-8"
+    "-parameters"
     "-source", "17"
     "-target", "17"
     "-cp", $classpath
