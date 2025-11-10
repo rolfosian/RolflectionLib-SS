@@ -25,6 +25,7 @@ public class AstralTestDelegate extends EngineTexDelegate {
         logger.info(sb.toString());
     }
 
+    // ENGINE RENDERING ORDER IS DETERMINED BY THE ORDER GIVEN IN THE SHIP FILE
     // this can probably be automated with a bit of math but i dont into that
     private static int[][] engineTexOrderStatic = TexReflection.getTexOrder(
         new String[][] {
@@ -200,54 +201,51 @@ public class AstralTestDelegate extends EngineTexDelegate {
     );
 
     private static final int STEPS = 5;
+    private static final int MAX_IDX = 7;
+
     private int stepper = 0;
     private int currentTexIdsIdx = 0;
 
     private int incr = 1;
-
     private boolean forwards = true;
-    private boolean hasMoved = false;
 
     public AstralTestDelegate() {
         this.engineTexOrder = Arrays.copyOf(engineTexOrderStatic, engineTexOrderStatic.length);
     }
 
-    private boolean isFirstOrLastEngine(int engineIdx) {
-        if (forwards) {
-            ShipEngineAPI engine = engines.get(engineIdx);
-
-            if (engine.isActive() && engineIdx == 0) return true;
-            
-            for (int i = engineIdx + 1; i < engines.size(); i++) {
-                if (engines.get(i).isActive()) return false;
-            }
-
-            return true;
-
-        } else {
-            ShipEngineAPI engine = engines.get(engineIdx);
-
-            if (engine.isActive() && engineIdx == engines.size() - 1) return true;
-
-            for (int i = 0; i < engineIdx; i++) {
-                if (engines.get(i).isActive()) return false;
-            }
-
-            return true;
-        }
+    private boolean isFirst() {
+        if (currentTexIdsIdx == 0) return true;
+        for (int i = 0; i < currentTexIdsIdx; i++)
+            if (engines.get(i).isActive()) return false;
+        return true;
     }
 
+    private boolean isLast() {
+        if (currentTexIdsIdx == engines.size() - 1) return true;
+        for (int i = currentTexIdsIdx + 1; i < engines.size(); i++)
+            if (engines.get(i).isActive()) return false;
+        return true;
+    }
+
+    private boolean isFirstOrLast() {
+        return forwards ? isLast() : isFirst();
+    }
+
+    // this can be optimized by indexing a dataclass with color and tex order step pairs but i cant be bothered doign that for this test
     private void christmastralLights(int current) {
         for (int i = 0; i < engineSlots.size(); i++) {
             if (i != current) {
-                engineSlots.get(i).setColor(Color.GREEN);
-                engineSlots.get(i).setContrailColor(Color.GREEN);
-                engineSlots.get(i).setGlowAlternateColor(Color.GREEN);
+                EngineSlotAPI engine = engineSlots.get(i);
+                engine.setColor(Color.GREEN);
+                engine.setContrailColor(Color.GREEN);
+                engine.setGlowAlternateColor(Color.GREEN);
             }
         }
-        engineSlots.get(current).setColor(Color.RED);
-        engineSlots.get(current).setContrailColor(Color.RED);
-        engineSlots.get(current).setGlowAlternateColor(Color.RED);
+
+        EngineSlotAPI engine = engineSlots.get(current);
+        engine.setColor(Color.RED);
+        engine.setContrailColor(Color.RED);
+        engine.setGlowAlternateColor(Color.RED);
     }
     
     @Override
@@ -258,16 +256,20 @@ public class AstralTestDelegate extends EngineTexDelegate {
         if (stepper == STEPS) {
             stepper = 0;
 
-            // if (isFirstOrLastEngine(current)) this.reverse(); // this doesnt work
+            currentTexIdsIdx += incr;
 
-            currentTexIdsIdx = (currentTexIdsIdx + incr) % engineTexOrder.length;
+            if (isFirstOrLast()) {
+                reverse();
+            }
+
+            if (currentTexIdsIdx > MAX_IDX) currentTexIdsIdx -= 2; // i dont like this, -2 because middle engine comes last in rendering order
 
             texWrapper.setTexIds(this.engineTexOrder[currentTexIdsIdx]);
             this.christmastralLights(currentTexIdsIdx);
         }
     }
 
-    private void reverse() { // this doesnt work
+    private void reverse() {
         incr = -incr;
         forwards = !forwards;
     }
