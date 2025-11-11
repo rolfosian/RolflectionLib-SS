@@ -192,6 +192,16 @@ public class RolfLectionUtil {
         return lst;
     }
 
+    public static List<String> getAllFieldNames(Class<?> cls) {
+        Object[] fields = cls.getDeclaredFields();
+        List<String> result = new ArrayList<>();
+
+        for (int i = 0; i < fields.length; i++) {
+            result.add(getFieldName(fields[i]));
+        }
+        return result;
+    }
+
     public static void setPrivateVariableByName(String fieldName, Object instanceToModify, Object newValue) throws Throwable {
         Object field = instanceToModify.getClass().getDeclaredField(fieldName);
         setFieldAccessibleHandle.invoke(field, true);
