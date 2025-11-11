@@ -514,6 +514,19 @@ public class RolfLectionUtil {
         return null;
     }
 
+    public static Object getMethod(String methodName, Object instance) {
+        for (Object method : instance.getClass().getMethods()) {
+            try {
+                if (((String)getMethodNameHandle.invoke(method)).equals(methodName)) {
+                    return method;
+                }
+            } catch (Throwable e) {
+                print(e);
+            }
+        }
+        return null;
+    }
+
     public static Object getMethod(String methodName, Class<?> cls, int paramCount) {
         for (Object method : cls.getMethods()) {
             try {
@@ -528,11 +541,37 @@ public class RolfLectionUtil {
         return null;
     }
 
+    public static Object getMethod(String methodName, Class<?> cls) {
+        for (Object method : cls.getMethods()) {
+            try {
+                if (((String)getMethodNameHandle.invoke(method)).equals(methodName)) {
+                    return method;
+                }
+            } catch (Throwable e) {
+                print(e);
+            }
+        }
+        return null;
+    }
+
     public static Object getMethodDeclared(String methodName, Class<?> cls, int paramCount) {
         for (Object method : cls.getDeclaredMethods()) {
             try {
                 if (((String)getMethodNameHandle.invoke(method)).equals(methodName) && 
                     ((Object[])getParameterTypesHandle.invoke(method)).length == paramCount) {
+                    return method;
+                }
+            } catch (Throwable e) {
+                print(e);
+            }
+        }
+        return null;
+    }
+
+    public static Object getMethodDeclared(String methodName, Class<?> cls) {
+        for (Object method : cls.getDeclaredMethods()) {
+            try {
+                if (((String)getMethodNameHandle.invoke(method)).equals(methodName)) {
                     return method;
                 }
             } catch (Throwable e) {
@@ -591,7 +630,7 @@ public class RolfLectionUtil {
     }
 
     public static Object getMethodExplicit(String methodName, Object instance, Class<?>[] parameterTypes) {
-        for (Object method : instance.getClass().getMethods()) {
+        for (Object method : instance.getClass().getDeclaredMethods()) {
             try {
                 if (((String) getMethodNameHandle.invoke(method)).equals(methodName)) {
                     Class<?>[] targetParameterTypes = (Class<?>[]) getParameterTypesHandle.invoke(method);
@@ -616,7 +655,7 @@ public class RolfLectionUtil {
     }
 
     public static Object getMethodExplicit(String methodName, Class<?> cls, Class<?>[] parameterTypes) {
-        for (Object method : cls.getMethods()) {
+        for (Object method : cls.getDeclaredMethods()) {
             try {
                 if (((String) getMethodNameHandle.invoke(method)).equals(methodName)) {
                     Class<?>[] targetParameterTypes = (Class<?>[]) getParameterTypesHandle.invoke(method);
@@ -691,14 +730,14 @@ public class RolfLectionUtil {
         return invokePrivateMethodDirectly(method, instance, arguments);
     }
 
-    public static Object getMethodAndInvokeDirectly(String methodName, Object instance, int argumentsNum, Object... arguments) {
-        Object method = getMethod(methodName, instance, argumentsNum);
+    public static Object getMethodAndInvokeDirectly(String methodName, Object instance, Object... arguments) {
+        Object method = getMethod(methodName, instance);
         if (method == null) return null;
         return invokeMethodDirectly(method, instance, arguments);
     }
 
-    public static Object getMethodDeclaredAndInvokeDirectly(String methodName, Object instance, int argumentsNum, Object... arguments) {
-        Object method = getMethodDeclared(methodName, instance.getClass(), argumentsNum);
+    public static Object getMethodDeclaredAndInvokeDirectly(String methodName, Object instance, Object... arguments) {
+        Object method = getMethodDeclared(methodName, instance.getClass());
         if (method == null) return null;
         return invokePrivateMethodDirectly(method, instance, arguments);
     }

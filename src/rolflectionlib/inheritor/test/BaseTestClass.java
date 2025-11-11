@@ -10,7 +10,7 @@ public class BaseTestClass {
     }
 
     public int add(int x, int y) {
-        Inherit.print("Original add called with", x);
+        Inherit.print("Original add called with", x, y);
         return value + x + y;
     }
 
@@ -20,6 +20,7 @@ public class BaseTestClass {
     }
 
     public int getValue() {
+        Inherit.print("Original getValue called");
         return this.value;
     }
 }

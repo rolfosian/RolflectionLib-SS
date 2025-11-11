@@ -5,9 +5,9 @@ import java.util.Arrays;
 import org.objectweb.asm.Opcodes;
 
 import rolflectionlib.inheritor.Inherit;
+import rolflectionlib.inheritor.MethodData;
+import rolflectionlib.inheritor.MethodHook;
 import rolflectionlib.util.RolfLectionUtil;
-import rolflectionlib.inheritor.Inherit.MethodData;
-import rolflectionlib.inheritor.Inherit.MethodHook;;
 
 public class InheritTest implements Opcodes {
 
@@ -25,7 +25,7 @@ public class InheritTest implements Opcodes {
                 @Override
                 public Object runAfter(Object returnValue) {
                     Inherit.print("add post-hook called, original return value:", returnValue);
-                    // hookArgs[0] = (int) hookArgs[0] * 2; // modify return
+                    returnValue = (int) returnValue * 2; // modify return
                     return returnValue;
                 }
             };
@@ -35,13 +35,13 @@ public class InheritTest implements Opcodes {
                 @Override
                 public Object[] runBefore(Object... hookArgs) {
                     Inherit.print("increment pre-hook called");
-                    return hookArgs;
+                    return null;
                 }
 
                 @Override
                 public Object runAfter(Object returnValue) {
                     Inherit.print("increment post-hook called");
-                    return returnValue;
+                    return null;
                 }
             };
 
@@ -49,7 +49,7 @@ public class InheritTest implements Opcodes {
                 @Override
                 public Object[] runBefore(Object... methodParams) {
                     Inherit.print("getValue pre-hook called");
-                    return methodParams;
+                    return null;
                 }
 
                 @Override
@@ -60,25 +60,9 @@ public class InheritTest implements Opcodes {
             };
 
             MethodData[] methodData = new MethodData[] {
-                new Inherit.MethodData(
-                    ACC_PUBLIC,
-                    RolfLectionUtil.getMethod("add", BaseTestClass.class, 2),
-                    null
-                ),
-                new Inherit.MethodData(
-                    ACC_PUBLIC,
-                    RolfLectionUtil.getMethod("increment", BaseTestClass.class, 0),
-                    null
-                ),
-                new MethodData(
-                    ACC_PUBLIC,
-                    RolfLectionUtil.getMethod("getValue", BaseTestClass.class, 0),
-                    null
-                )
-            };
-
-            Object[] ctorParams = new Object[] {
-                0, addHook, incHook, getValueHook
+                new MethodData(RolfLectionUtil.getMethod("add", BaseTestClass.class)),
+                new MethodData(RolfLectionUtil.getMethod("increment", BaseTestClass.class)),
+                new MethodData(RolfLectionUtil.getMethod("getValue", BaseTestClass.class))
             };
 
             // generate subclass
@@ -92,22 +76,28 @@ public class InheritTest implements Opcodes {
 
             // instantiate subclass with hooks
             Object ctor = subClass.getConstructors()[0];
-            Object instance = RolfLectionUtil.instantiateClass(ctor, ctorParams);
 
+            Object[] ctorParams = new Object[] {
+                0, addHook, incHook, getValueHook
+            };
+
+            Object instance = RolfLectionUtil.instantiateClass(ctor, ctorParams);
+            
+            // log
             RolfLectionUtil.logMethods(instance);
             RolfLectionUtil.logFields(instance);
 
             // invoke add
-            int addResult = (int) RolfLectionUtil.getMethodAndInvokeDirectly("add", instance, 2, 3, 6);
+            int addResult = (int) RolfLectionUtil.getMethodAndInvokeDirectly("add", instance, 3, 6);
             Inherit.print("Final add result:", addResult);
 
             // invoke increment
-            RolfLectionUtil.getMethodAndInvokeDirectly("increment", instance, 0);
+            RolfLectionUtil.getMethodAndInvokeDirectly("increment", instance);
             int finalValue = (int) RolfLectionUtil.getPrivateVariable("value", instance);
             Inherit.print("Final value after increment:", finalValue);
 
             // invoke getValue
-            int hookedGetValue = (int) RolfLectionUtil.getMethodAndInvokeDirectly("getValue", instance, 0);
+            int hookedGetValue = (int) RolfLectionUtil.getMethodAndInvokeDirectly("getValue", instance);
             Inherit.print("Hooked getValue:", hookedGetValue);
 
         } catch (Throwable e) {

@@ -3,7 +3,6 @@ package rolflectionlib.inheritor;
 import org.apache.log4j.Logger;
 import org.objectweb.asm.*;
 
-import rolflectionlib.util.RolFileUtil;
 import rolflectionlib.util.RolfLectionUtil;
 
 import com.fs.starfarer.api.Global;
@@ -23,39 +22,6 @@ public class Inherit implements Opcodes {
     private static final String methodHookDescriptor = Type.getDescriptor(MethodHook.class);
     private static final String preHookMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runBefore", MethodHook.class, 1));
     private static final String postHookMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runAfter", MethodHook.class, 1));
-
-
-    public static class MethodData {
-        public final Object method;
-        public final String methodName;
-
-        public final Class<?> returnType;
-        public final Class<?>[] paramTypes;
-        
-        public final int access; // ie ACC_PRIVATE or ACC_PRIVATE | ACC_FINAL;
-        public final String signature;
-        public final String descriptor;
-
-        public final boolean isInterfaceMethod;
-
-        public MethodData(int access, Object method, String signature) {
-            this.method = method;
-            this.access = access;
-            this.signature = signature;
-
-            this.methodName = RolfLectionUtil.getMethodName(method);
-            this.returnType = RolfLectionUtil.getReturnType(method);
-            this.paramTypes = RolfLectionUtil.getMethodParamTypes(method);
-
-            this.isInterfaceMethod = RolfLectionUtil.getMethodDeclaringClass(method).isInterface();
-            this.descriptor = Type.getMethodDescriptor(method);
-        }
-    }
-
-    public static interface MethodHook {
-        public Object[] runBefore(Object... methodParams);
-        public Object runAfter(Object returnValue);
-    }
     
     public static Class<?> inheritClass(
             Class<?> superClass,
@@ -146,7 +112,7 @@ public class Inherit implements Opcodes {
                     methodData.access,
                     methodData.methodName,
                     methodData.descriptor,
-                    methodData.signature,
+                    null,
                     null
                 );
                 mv.visitCode();
@@ -159,7 +125,7 @@ public class Inherit implements Opcodes {
                 boolean isPrimitiveReturnType = returnType.isPrimitive();
 
                 int currSlot = 1;
-                if (paramTypes.length > 0) {    
+                if (paramTypes.length > 0) {
                     mv.visitLdcInsn(paramTypes.length);
     
                     mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
@@ -278,7 +244,6 @@ public class Inherit implements Opcodes {
                     return defineClass(classBinaryName, b, 0, b.length);
                 }
             },
-            1,
             cw.toByteArray());
 
         } catch (Throwable e) {
