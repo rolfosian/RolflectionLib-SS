@@ -7,9 +7,6 @@ import org.apache.log4j.Logger;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.combat.EngineSlotAPI;
-import com.fs.starfarer.api.combat.ShipEngineControllerAPI.ShipEngineAPI;
-
-import rolflectionlib.util.Misc;
 import rolflectionlib.util.TexReflection;
 
 public class AstralTestDelegate extends EngineTexDelegate {
@@ -202,6 +199,8 @@ public class AstralTestDelegate extends EngineTexDelegate {
 
     private static final int STEPS = 5;
     private static final int MAX_IDX = 7;
+    private static final Color CONTRAIL_GREEN = new Color(Color.GREEN.getRed(), Color.GREEN.getGreen(), Color.GREEN.getBlue(), 25);
+    private static final Color CONTRAIL_RED = new Color(Color.RED.getRed(), Color.RED.getGreen(), Color.RED.getBlue(), 25);
 
     private int stepper = 0;
     private int currentTexIdsIdx = 0;
@@ -239,6 +238,7 @@ public class AstralTestDelegate extends EngineTexDelegate {
                 engine.setColor(Color.GREEN);
                 engine.setContrailColor(Color.GREEN);
                 engine.setGlowAlternateColor(Color.GREEN);
+                contrailMap.get(engine).setColor(CONTRAIL_GREEN);
             }
         }
 
@@ -246,6 +246,7 @@ public class AstralTestDelegate extends EngineTexDelegate {
         engine.setColor(Color.RED);
         engine.setContrailColor(Color.RED);
         engine.setGlowAlternateColor(Color.RED);
+        contrailMap.get(engine).setColor(CONTRAIL_RED);
     }
     
     @Override
@@ -258,9 +259,7 @@ public class AstralTestDelegate extends EngineTexDelegate {
 
             currentTexIdsIdx += incr;
 
-            if (isFirstOrLast()) {
-                reverse();
-            }
+            if (isFirstOrLast()) reverse();
 
             if (currentTexIdsIdx > MAX_IDX) currentTexIdsIdx -= 2; // i dont like this, -2 because middle engine comes last in rendering order
 

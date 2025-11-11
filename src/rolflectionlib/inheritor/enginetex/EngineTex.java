@@ -43,6 +43,7 @@ public class EngineTex {
     private static Class<?> engineGlowClass;
     private static Object engineGlowTexField;
     private static Object engineGlowSmoothTexField;
+    private static Object engineGlowContrailMapField;
 
     static {
         try {
@@ -85,6 +86,7 @@ public class EngineTex {
 
             for (Object field : engineGlowClass.getDeclaredFields()) {
                 Class<?> fieldType = (Class<?>) RolfLectionUtil.getFieldTypeHandle.invoke(field);
+
                 if (fieldType.equals(TexReflection.texClass)) {
                     if (engineGlowTexField == null) {
                         engineGlowTexField = field;
@@ -93,7 +95,14 @@ public class EngineTex {
                     } else if (engineGlowSmoothTexField == null) {
                         engineGlowSmoothTexField = field;
                         RolfLectionUtil.setFieldAccessibleHandle.invoke(engineGlowSmoothTexField, true);
+                    }
 
+                } else if (fieldType.equals(Map.class)) {
+                    String genericType = String.valueOf(RolfLectionUtil.getGenericTypeHandle.invoke(field));
+
+                    if (genericType.contains("ContrailEmitter")) {
+                        engineGlowContrailMapField = field;
+                        RolfLectionUtil.setFieldAccessibleHandle.invoke(field, true);
                     }
                 }
             }
@@ -120,6 +129,7 @@ public class EngineTex {
     
             List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
             delegate.setEngines(engines);
+            delegate.setContrailMap((Map<Object, Object>) RolfLectionUtil.getFieldHandle.invoke(engineGlowContrailMapField, engineGlow));
             
             EngineTexInterface ourTexInheritor = instantiateEngineTex(delegate.getTexIds(0), engines, delegate);
             delegate.setTexWrapper(ourTexInheritor);
@@ -170,6 +180,7 @@ public class EngineTex {
     
             List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
             delegate.setEngines(engines);
+            delegate.setContrailMap((Map<Object, Object>) RolfLectionUtil.getFieldHandle.invoke(engineGlowContrailMapField, engineGlow));
             
             EngineTexInterface ourTexInheritor = instantiateEngineTex(textures, engines, delegate);
             delegate.setTexWrapper(ourTexInheritor);
@@ -221,6 +232,7 @@ public class EngineTex {
     
             List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
             delegate.setEngines(engines);
+            delegate.setContrailMap((Map<Object, Object>) RolfLectionUtil.getFieldHandle.invoke(engineGlowContrailMapField, engineGlow));
 
             EngineTexInterface ourTexInheritor = instantiateEngineTex(textures, engines, delegate);
             delegate.setTexWrapper(ourTexInheritor);

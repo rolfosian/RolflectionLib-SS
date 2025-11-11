@@ -1,14 +1,15 @@
 package rolflectionlib.inheritor.enginetex;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import com.fs.starfarer.api.combat.EngineSlotAPI;
 import com.fs.starfarer.api.combat.ShipEngineControllerAPI.ShipEngineAPI;
+import com.fs.starfarer.combat.entities.ContrailEmitter;
 
 public abstract class EngineTexDelegate {
     protected List<ShipEngineAPI> engines = new ArrayList<>();
     protected List<EngineSlotAPI> engineSlots = new ArrayList<>();
+    protected Map<EngineSlotAPI, ContrailEmitter> contrailMap = new HashMap<>();
 
     protected EngineTexInterface texWrapper = null;
     protected int[][] engineTexOrder;
@@ -32,6 +33,12 @@ public abstract class EngineTexDelegate {
             ShipEngineAPI engine = (ShipEngineAPI) eng;
             this.engines.add(engine);
             this.engineSlots.add(engine.getEngineSlot());
+        }
+    }
+
+    protected void setContrailMap(Map<Object, Object> contrailMap) {
+        for (Map.Entry<Object, Object> entry : contrailMap.entrySet()) {
+            this.contrailMap.put((EngineSlotAPI)entry.getKey(), (ContrailEmitter)entry.getValue());
         }
     }
 

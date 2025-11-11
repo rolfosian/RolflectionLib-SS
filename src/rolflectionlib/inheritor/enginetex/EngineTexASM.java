@@ -495,7 +495,6 @@ public class EngineTexASM implements Opcodes {
                 return defineClass("com.fs.graphics.EngineTex", b, 0, b.length);
             }
         },
-        1,
         bytes);
     }
 }
