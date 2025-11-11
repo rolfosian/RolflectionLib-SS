@@ -6,16 +6,36 @@ import org.apache.log4j.Logger;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
+import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.input.InputEventClass;
 import com.fs.starfarer.api.input.InputEventType;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
 
+import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.loading.Description;
+import com.fs.starfarer.loading.SpecStore;
+
 import rolflectionlib.util.ListenerFactory.ActionListener;
 
+@SuppressWarnings("unchecked")
 public class Misc {
-    
+
+    public static Map<String, Object> DESCRIPTION_MAP = null;
+    public static final String CUSTOM_DESC_PERSISTENT_DATA_KEY = "$rlCustomCampaignEntityDescs";
+
+    public static void setEntityDescription(SectorEntityToken entity, String desc) { // not save agnostic currently, full impl commented out in mod plugin
+        Description newDescription = new Description(entity.getId(), Description.Type.CUSTOM);
+        newDescription.setText1(desc);
+        newDescription.setText2(desc);
+
+        DESCRIPTION_MAP.put(entity.getId() + "_CUSTOM", newDescription);
+        ((Map<String, Object>)Global.getSector().getPersistentData().get(CUSTOM_DESC_PERSISTENT_DATA_KEY)).put(entity.getId(), newDescription);
+
+        entity.setCustomDescriptionId(entity.getId());
+    }
+
     public static Object createButtonClickEventInstance(PositionAPI buttonPosition) {
         return createInputEventInstance(
         InputEventClass.MOUSE_EVENT,
