@@ -1,6 +1,8 @@
 package rolflectionlib.inheritor.test;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.objectweb.asm.Opcodes;
 
@@ -59,16 +61,62 @@ public class InheritTest implements Opcodes {
                 }
             };
 
+            MethodHook getHook = new MethodHook() {
+
+                @Override
+                public Object[] runBefore(Object... methodParams) {
+                    return methodParams;
+                }
+
+                @Override
+                public Object runAfter(Object returnValue) {
+                    return returnValue;
+                }
+                
+            };
+
+            MethodHook putHook = new MethodHook() {
+
+                @Override
+                public Object[] runBefore(Object... methodParams) {
+                    methodParams[0] = "STRING";
+                    return methodParams;
+                }
+
+                @Override
+                public Object runAfter(Object returnValue) {
+                    return returnValue;
+                }
+                
+            };
+
+            MethodHook getStringHook = new MethodHook() {
+
+                @Override
+                public Object[] runBefore(Object... methodParams) {
+                    return methodParams;
+                }
+
+                @Override
+                public Object runAfter(Object returnValue) {
+                    return "HO HO HO";
+                }
+                
+            };
+
             MethodData[] methodData = new MethodData[] {
                 new MethodData(RolfLectionUtil.getMethod("add", BaseTestClass.class)),
                 new MethodData(RolfLectionUtil.getMethod("increment", BaseTestClass.class)),
-                new MethodData(RolfLectionUtil.getMethod("getValue", BaseTestClass.class))
+                new MethodData(RolfLectionUtil.getMethod("getValue", BaseTestClass.class)),
+                new MethodData(RolfLectionUtil.getMethod("get", BaseTestClass.class)),
+                new MethodData(RolfLectionUtil.getMethod("put", BaseTestClass.class)),
+                new MethodData(RolfLectionUtil.getMethod("getString", BaseTestClass.class))
             };
 
             // generate subclass
             Class<?> subClass = Inherit.inheritClass(
                     BaseTestClass.class,
-                    BaseTestClass.class.getConstructor(int.class),
+                    BaseTestClass.class.getConstructor(new Class<?>[] {int.class, String.class, Map.class}),
                     null,
                     "BaseClassInheritor",
                     methodData
@@ -78,7 +126,7 @@ public class InheritTest implements Opcodes {
             Object ctor = subClass.getConstructors()[0];
 
             Object[] ctorParams = new Object[] {
-                0, addHook, incHook, getValueHook
+                0, "STRING", new HashMap<>(), addHook, incHook, getValueHook, getHook, putHook, getStringHook
             };
 
             Object instance = RolfLectionUtil.instantiateClass(ctor, ctorParams);
@@ -99,6 +147,12 @@ public class InheritTest implements Opcodes {
             // invoke getValue
             int hookedGetValue = (int) RolfLectionUtil.getMethodAndInvokeDirectly("getValue", instance);
             Inherit.print("Hooked getValue:", hookedGetValue);
+
+            RolfLectionUtil.getMethodAndInvokeDirectly("put", instance, "key", "value");
+
+            Inherit.print(RolfLectionUtil.getMethodAndInvokeDirectly("get", instance));
+
+            Inherit.print(RolfLectionUtil.getMethodAndInvokeDirectly("getString", instance));
 
         } catch (Throwable e) {
             throw new RuntimeException(e);

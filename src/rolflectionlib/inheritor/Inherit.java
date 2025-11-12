@@ -3,6 +3,7 @@ package rolflectionlib.inheritor;
 import org.apache.log4j.Logger;
 import org.objectweb.asm.*;
 
+import rolflectionlib.util.RolFileUtil;
 import rolflectionlib.util.RolfLectionUtil;
 
 import com.fs.starfarer.api.Global;
@@ -172,6 +173,7 @@ public class Inherit implements Opcodes {
                     for (int j = 0; j < paramTypes.length; j++) {
                         load(mv, paramTypes[j], paramSlot(paramTypes, j));
                     }
+                    mv.visitMethodInsn(INVOKESPECIAL, superName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
 
                     if (returnType == void.class) {
                         // call runAfter with null and discard its return
@@ -183,7 +185,6 @@ public class Inherit implements Opcodes {
                         mv.visitInsn(RETURN);
                         
                     } else {
-                        mv.visitMethodInsn(INVOKESPECIAL, superName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
                         if (isPrimitiveReturnType) {
                             box(mv, Type.getType(returnType));
                         }
@@ -237,6 +238,8 @@ public class Inherit implements Opcodes {
                 mv.visitEnd();
             }
             cw.visitEnd();
+
+            RolFileUtil.writeToFile("InheritDump.class", cw.toByteArray());
 
             String classBinaryName = internalName.replace('/', '.');
             return (Class<?>) RolfLectionUtil.getMethodDeclaredAndInvokeDirectly("define", new ClassLoader(Inherit.class.getClassLoader()) {
