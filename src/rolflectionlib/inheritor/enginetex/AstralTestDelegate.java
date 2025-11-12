@@ -200,7 +200,7 @@ public class AstralTestDelegate extends EngineTexDelegate {
     private static final int STEPS = 5;
     private static final int MAX_IDX = 7;
     private static final Color CONTRAIL_GREEN = new Color(Color.GREEN.getRed(), Color.GREEN.getGreen(), Color.GREEN.getBlue(), 25);
-    private static final Color CONTRAIL_RED = new Color(Color.RED.getRed(), Color.RED.getGreen(), Color.RED.getBlue(), 25);
+    private static final Color CONTRAIL_RED = new Color(Color.RED.getRed(), Color.RED.getGreen(), Color.RED.getBlue(), 175);
 
     private int stepper = 0;
     private int currentTexIdsIdx = 0;
