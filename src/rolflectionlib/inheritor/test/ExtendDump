@@ -1,0 +1,82 @@
+// Source code is decompiled from a .class file using FernFlower decompiler (from Intellij IDEA).
+import java.util.Map;
+import rolflectionlib.inheritor.MethodHook;
+import rolflectionlib.inheritor.test.BaseTestClass;
+import rolflectionlib.inheritor.test.BaseTestInterface;
+
+public class BaseClassInheritor extends BaseTestClass implements BaseTestInterface {
+   private final MethodHook rolfLectionHook0;
+   private final MethodHook rolfLectionHook1;
+   private final MethodHook rolfLectionHook2;
+   private final MethodHook rolfLectionHook3;
+   private final MethodHook rolfLectionHook4;
+   private final MethodHook rolfLectionHook5;
+   private final MethodHook rolfLectionHook6;
+   private final MethodHook rolfLectionHook7;
+   private final MethodHook rolfLectionHook8;
+
+   public BaseClassInheritor(int var1, String var2, Map var3, MethodHook var4, MethodHook var5, MethodHook var6, MethodHook var7, MethodHook var8, MethodHook var9, MethodHook var10, MethodHook var11, MethodHook var12) {
+      super(var1, var2, var3);
+      this.rolfLectionHook0 = var4;
+      this.rolfLectionHook1 = var5;
+      this.rolfLectionHook2 = var6;
+      this.rolfLectionHook3 = var7;
+      this.rolfLectionHook4 = var8;
+      this.rolfLectionHook5 = var9;
+      this.rolfLectionHook6 = var10;
+      this.rolfLectionHook7 = var11;
+      this.rolfLectionHook8 = var12;
+   }
+
+   public int add(int var1, int var2) {
+      Object[] var4 = new Object[]{var1, var2};
+      var4 = this.rolfLectionHook0.runBefore(var4);
+      var1 = (Integer)var4[0];
+      var2 = (Integer)var4[1];
+      return (Integer)this.rolfLectionHook0.runAfter(super.add(var1, var2));
+   }
+
+   public void increment() {
+      this.rolfLectionHook1.runBefore((Object[])null);
+      super.increment();
+      this.rolfLectionHook1.runAfter((Object)null);
+   }
+
+   public int getValue() {
+      this.rolfLectionHook2.runBefore((Object[])null);
+      return (Integer)this.rolfLectionHook2.runAfter(super.getValue());
+   }
+
+   public Object get() {
+      this.rolfLectionHook3.runBefore((Object[])null);
+      return (Object)this.rolfLectionHook3.runAfter(super.get());
+   }
+
+   public void put(String var1, Object var2) {
+      Object[] var4 = new Object[]{var1, var2};
+      var4 = this.rolfLectionHook4.runBefore(var4);
+      var1 = (String)var4[0];
+      var2 = (Object)var4[1];
+      super.put(var1, var2);
+      this.rolfLectionHook4.runAfter((Object)null);
+   }
+
+   public String getString() {
+      this.rolfLectionHook5.runBefore((Object[])null);
+      return (String)this.rolfLectionHook5.runAfter(super.getString());
+   }
+
+   public String interfaceStringGetTest() {
+      return (String)this.rolfLectionHook6.runInterface((Object[])null);
+   }
+
+   public void interfaceVoidTest(int var1, int var2) {
+      Object[] var4 = new Object[]{var1, var2};
+      this.rolfLectionHook7.runInterface(var4);
+   }
+
+   public Object interfaceObjTest(String var1) {
+      Object[] var3 = new Object[]{var1};
+      return (Object)this.rolfLectionHook8.runInterface(var3);
+   }
+}

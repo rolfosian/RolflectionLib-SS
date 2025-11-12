@@ -54,6 +54,7 @@ public class ClassRefs {
     public static Class<?> actionListenerInterface;
     /** Interface that contains a single method: dialogDismissed */
     public static Class<?> dialogDismissedInterface;
+    public static Object dialogDismissedInterfaceMethod;
 
     /** Interface for renderable UI elements */
     public static Class<?> renderableUIElementInterface;
@@ -167,6 +168,7 @@ public class ClassRefs {
             Object[] methods = interfc.getDeclaredMethods();
             if (methods.length == 1 && RolfLectionUtil.getMethodName(methods[0]).equals("dialogDismissed")) {
                 dialogDismissedInterface = interfc;
+                dialogDismissedInterfaceMethod = methods[0];
                 break;
             }
         }

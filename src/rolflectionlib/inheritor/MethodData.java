@@ -15,6 +15,7 @@ public class MethodData implements Opcodes {
     public final int access;
     public final String descriptor;
 
+    public final String declaringClassInternalName;
     public final boolean isInterfaceMethod;
 
     public MethodData(Object method) {
@@ -23,9 +24,11 @@ public class MethodData implements Opcodes {
         this.methodName = RolfLectionUtil.getMethodName(method);
         this.returnType = RolfLectionUtil.getReturnType(method);
         this.paramTypes = RolfLectionUtil.getMethodParamTypes(method);
-
-        this.isInterfaceMethod = RolfLectionUtil.getMethodDeclaringClass(method).isInterface();
         this.descriptor = Type.getMethodDescriptor(method);
+
+        Class<?> declaringClass = RolfLectionUtil.getMethodDeclaringClass(method);
+        this.declaringClassInternalName = Type.getInternalName(declaringClass);
+        this.isInterfaceMethod = declaringClass.isInterface();
 
         String visibility = RolfLectionUtil.getVisibility(RolfLectionUtil.getMethodModifiers(method));
         switch(visibility) {
