@@ -23,7 +23,15 @@ import rolflectionlib.util.TexReflection;
 
 @SuppressWarnings("unchecked")
 public class RolfLectionLibPlugin extends BaseModPlugin {
-    private Logger logger = Global.getLogger(RolfLectionLibPlugin.class);
+    private static Logger logger = Global.getLogger(RolfLectionLibPlugin.class);
+    public static void print(Object... args) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            sb.append(args[i] instanceof String ? (String) args[i] : String.valueOf(args[i]));
+            if (i < args.length - 1) sb.append(' ');
+        }
+        logger.info(sb.toString());
+    }
     
     private static final String SAVE_TIMESTAMP_KEY = "$rlSaveTimestamp";
     public static String SAVE_TIMESTAMP;
@@ -61,7 +69,7 @@ public class RolfLectionLibPlugin extends BaseModPlugin {
             persistentData.put(SAVE_TIMESTAMP_KEY, saveTimestamp);
         }
 
-        if (!SAVE_TIMESTAMP.equals(saveTimestamp)) { // in case different save we need to remove different save descriptions
+        if (!saveTimestamp.equals(SAVE_TIMESTAMP)) { // in case of different save we need to remove different save descriptions
             for (String key : Misc.CUSTOM_DESC_KEYS) {
                 Misc.DESCRIPTION_MAP.remove(key);
             }
@@ -71,9 +79,10 @@ public class RolfLectionLibPlugin extends BaseModPlugin {
         Map<String, Object> customStationDescs = (Map<String, Object>) persistentData.get(Misc.CUSTOM_DESC_PERSISTENT_DATA_KEY);
         if (customStationDescs != null) {
             for (Map.Entry<String, Object> entry : customStationDescs.entrySet()) {
-                Misc.DESCRIPTION_MAP.put(entry.getKey() + "_CUST", entry.getValue());
+                Misc.DESCRIPTION_MAP.put(entry.getKey() + "_CUSTOM", entry.getValue());
 
                 SectorEntityToken token = Global.getSector().getEntityById(entry.getKey());
+                print(new ArrayList(token.getTags()));
                 token.setCustomDescriptionId(token.getId());
             }
         } else {
