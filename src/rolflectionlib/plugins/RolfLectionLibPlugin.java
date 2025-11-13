@@ -6,11 +6,10 @@ import org.apache.log4j.Logger;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorEntityToken;
-import com.fs.starfarer.api.loading.Description;
-import com.fs.starfarer.loading.SpecStore;
 
 import rolflectionlib.inheritor.enginetex.EngineTex;
+import rolflectionlib.inheritor.examples.MultiListener;
+
 import rolflectionlib.util.ClassRefs;
 import rolflectionlib.util.ListenerFactory;
 import rolflectionlib.util.Misc;
@@ -33,6 +32,7 @@ public class RolfLectionLibPlugin extends BaseModPlugin {
         ListenerFactory.init();
         TexReflection.init();
         EngineTex.init();
+        MultiListener.init();
 
         // TODO account for different saves
         // for (Object method : SpecStore.class.getDeclaredMethods()) {

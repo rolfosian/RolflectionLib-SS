@@ -21,8 +21,6 @@ public class Inherit implements Opcodes {
         logger.info(sb.toString());
     }
 
-    private static final Map<String, Class<?>> nameToSubClassMap = new HashMap<>();
-
     private static final String methodHookInternalName = Type.getInternalName(MethodHook.class);
     private static final String methodHookDescriptor = Type.getDescriptor(MethodHook.class);
     private static final String preHookMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runBefore", MethodHook.class));
@@ -34,9 +32,9 @@ public class Inherit implements Opcodes {
      * @param superClass    Super class to extend
      * @param interfacesToImplement    Any interfaces to implement, can be null
      * @param superClassConstructor    Which super class constructor to use
-     * @param inheritorName    Internal name of resulting class e.g. <code>"path/to/package/MyInheritorClass"</code>
+     * @param inheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
      * @param methodDataArray array of {@link MethodData} objects to denote which methods to hook.
-     * <b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b>
+     *          - <i><b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b>
      * @return Desired sub class with pre and post hooked functions.
      */
     public static Class<?> extendClass(
@@ -46,9 +44,28 @@ public class Inherit implements Opcodes {
             String inheritorName,
             MethodData[] methodDataArray
         ) {
-            Class<?> existingClass = nameToSubClassMap.get(inheritorName);
-            if (existingClass != null) return existingClass;
+        return extendClass(superClass, interfacesToImplement, superClassConstructor, inheritorName, methodDataArray, null);
+    }
 
+    /** Extends a given super class and hooks methods denoted by parameter array of {@link MethodData} objects.
+     * 
+     * @param superClass    Super class to extend
+     * @param interfacesToImplement    Any interfaces to implement, can be null
+     * @param superClassConstructor    Which super class constructor to use
+     * @param inheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
+     * @param methodDataArray array of {@link MethodData} objects to denote which methods to hook.
+     *          - <i><b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b>
+     * @param binaryDumpFilePath File path to dump binary of result if wanted, should be null unless debugging. e.g. <code>Global.getSettings().getModManager().getModSpec("rolflection_lib").getPath() + "/src/rolflectionlib/inheritor/example/MultiListenerDump.class"</code>
+     * @return Desired sub class with pre and post hooked functions.
+     */
+    public static Class<?> extendClass(
+            Class<?> superClass,
+            Class<?>[] interfacesToImplement,
+            Object superClassConstructor,
+            String inheritorName,
+            MethodData[] methodDataArray,
+            String binaryDumpFilePath
+        ) {
             String[] interfaceNames = null;
             if (interfacesToImplement != null) {
                 interfaceNames = new String[interfacesToImplement.length];
@@ -283,25 +300,28 @@ public class Inherit implements Opcodes {
             }
             cw.visitEnd();
 
+            byte[] classBytes = cw.toByteArray();
+            if (binaryDumpFilePath != null) dumpClass(classBytes, binaryDumpFilePath);
+
             String classBinaryName = internalName.replace('/', '.');
             return (Class<?>) RolfLectionUtil.getMethodDeclaredAndInvokeDirectly("define", new ClassLoader(Inherit.class.getClassLoader()) {
                 Class<?> define(byte[] b) {
                     return defineClass(classBinaryName, b, 0, b.length);
                 }
             },
-            cw.toByteArray());
+            classBytes);
 
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
 
-    /** Implements a given array of interfaces and hooks their methods denoted by an array of {@link MethodData} objects.
+        /** Implements a given array of interfaces and hooks their methods denoted by an array of {@link MethodData} objects.
      * 
-     * @param internalInheritorName    Internal name of resulting class e.g. <code>"path/to/package/MyInheritorClass"</code>
+     * @param internalInheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
      * @param interfacesToImplement    Interfaces to implement
-     * @param methodDataArray Array of {@link MethodData} objects containing all interface methods' {@link MethodData} objects.
-     * <b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b>
+     * @param methodDataArray Array of {@link MethodData} objects containing all interface methods' {@link MethodData} objects
+     *          - <i><b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b>
      * @return Desired subclass with hooked interface functions.
      */
     public static Class<?> implementInterface(
@@ -309,9 +329,24 @@ public class Inherit implements Opcodes {
             Class<?>[] interfacesToImplement,
             MethodData[] methodDataArray
         ) {
-            Class<?> existingCtor = nameToSubClassMap.get(internalInheritorName);
-            if (existingCtor != null) return existingCtor;
+        return implementInterface(internalInheritorName, interfacesToImplement, methodDataArray, null);
+    }
 
+    /** Implements a given array of interfaces and hooks their methods denoted by an array of {@link MethodData} objects.
+     * 
+     * @param internalInheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
+     * @param interfacesToImplement    Interfaces to implement
+     * @param methodDataArray Array of {@link MethodData} objects containing all interface methods' {@link MethodData} objects.
+     *          - <i><b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b>
+     * @param binaryDumpFilePath File path to dump binary of result if wanted, should be null unless debugging. e.g. <code>Global.getSettings().getModManager().getModSpec("rolflection_lib").getPath() + "/src/rolflectionlib/inheritor/example/MultiListenerDump.class"</code>
+     * @return Desired subclass with hooked interface functions.
+     */
+    public static Class<?> implementInterface(
+            String internalInheritorName,
+            Class<?>[] interfacesToImplement,
+            MethodData[] methodDataArray,
+            String binaryDumpFilePath
+        ) {
             String[] interfaceNames = new String[interfacesToImplement.length];
             for (int i = 0; i < interfacesToImplement.length; i++) interfaceNames[i] = Type.getType(interfacesToImplement[i]).getInternalName();
         
@@ -476,17 +511,27 @@ public class Inherit implements Opcodes {
             }
             cw.visitEnd();
 
+            byte[] classBytes = cw.toByteArray();
+            if (binaryDumpFilePath != null) dumpClass(classBytes, binaryDumpFilePath);
+
             String classBinaryName = internalName.replace('/', '.');
             return (Class<?>) RolfLectionUtil.getMethodDeclaredAndInvokeDirectly("define", new ClassLoader(Inherit.class.getClassLoader()) {
                 Class<?> define(byte[] b) {
                     return defineClass(classBinaryName, b, 0, b.length);
                 }
             },
-            cw.toByteArray());
+            classBytes);
 
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void dumpClass(byte[] toDump, String filePath) {
+        RolFileUtil.writeToFile(
+            filePath,
+            toDump
+        );
     }
 
     protected static void popStack(MethodVisitor mv, Class<?> type) {
