@@ -1,0 +1,334 @@
+package rolflectionlib.inheritor.enginetex.old;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.*;
+
+import org.apache.log4j.Logger;
+import org.codehaus.janino.SimpleCompiler;
+import org.lwjgl.opengl.GL11;
+
+import com.fs.starfarer.api.EveryFrameScript;
+import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.combat.BaseEveryFrameCombatPlugin;
+import com.fs.starfarer.api.combat.ShipAPI;
+import com.fs.starfarer.api.input.InputEventAPI;
+import com.fs.starfarer.combat.entities.ContrailEmitter;
+
+import rolflectionlib.util.RolfLectionUtil;
+import rolflectionlib.util.TexReflection;
+import rolflectionlib.util.ClassRefs;
+
+import com.fs.graphics.Sprite;
+import com.fs.starfarer.loading.specs.EngineSlot;
+import com.fs.starfarer.util.ValueShifter;
+
+public class TexWrapperSubClass {
+    private static final Logger logger = Global.getLogger(TexWrapperSubClass.class);
+    
+    public static void print(Object... args) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            sb.append(args[i] instanceof String ? (String) args[i] : String.valueOf(args[i]));
+            if (i < args.length - 1) sb.append(' ');
+        }
+        logger.info(sb.toString());
+    }
+
+    public static final Class<?> ourTexClassInheritor;
+    public static final Object ourTexClassCtor;
+
+    private static MethodHandle getEngineControllerHandle;
+
+    private static Class<?> engineControllerClass;
+    private static List<Object> getEnginesMethodHandle;
+    private static MethodHandle getEngineGlowHandle;
+    private static MethodHandle engineControllergetDelegateHandle;
+    private static MethodHandle engineControllerGetEnginesHandle;
+    
+    private static Class<?> engineClass;
+    private static MethodHandle engineIsActiveHandle;
+
+    private static Class<?> engineControllerDelegateClass;
+    private static MethodHandle getEngineLocationsHandle;
+
+    private static Class<?> engineGlowClass;
+    private static Object engineGlowTexField;
+    private static Object engineGlowTexFieldSmall;
+    private static Object engineGlowDataClassMapField;
+    private static Object engineGlowValueShifterField;
+
+    private static Class<?> engineGlowDataClassType;
+    private static Object engineGlowDataClassField;
+
+    private static final Class<?> shipClass = ClassRefs.shipClass;
+
+    private static MethodHandle getDataClassValueHandle;
+    private static MethodHandle isEngineActiveHandle;
+
+    static {
+        try {
+
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+            for (Object method : shipClass.getDeclaredMethods()) {
+                String methodName = (String) RolfLectionUtil.getMethodNameHandle.invoke(method);
+
+                if (methodName.equals("getEngineController")) {
+                    engineControllerClass = (Class<?>) RolfLectionUtil.getReturnTypeHandle.invoke(method);
+                    if (engineControllerClass.isInterface()) continue;
+                    
+                    MethodType methodType = MethodType.methodType(engineControllerClass);
+                    getEngineControllerHandle = lookup.findVirtual(shipClass, "getEngineController", methodType);
+                    break;
+                }
+            }
+
+            for (Object method : engineControllerClass.getDeclaredMethods()) {
+                String methodName = (String) RolfLectionUtil.getMethodNameHandle.invoke(method);
+
+                if (methodName.equals("getEngineGlow")) {
+                    engineGlowClass = (Class<?>) RolfLectionUtil.getReturnTypeHandle.invoke(method);
+
+                    MethodType methodType = MethodType.methodType(engineGlowClass);
+                    getEngineGlowHandle = lookup.findVirtual(engineControllerClass, "getEngineGlow", methodType);
+
+                } else if (methodName.equals("getDelegate")) {
+                    engineControllerDelegateClass = (Class<?>) RolfLectionUtil.getReturnTypeHandle.invoke(method);
+
+                    MethodType methodType = MethodType.methodType(engineControllerDelegateClass);
+                    engineControllergetDelegateHandle = lookup.findVirtual(engineControllerClass, "getDelegate", methodType);
+
+                } else if (methodName.equals("getEngines")) {
+                    engineControllerGetEnginesHandle = lookup.findVirtual(engineControllerClass, "getEngines", MethodType.methodType(List.class));
+
+                    String genericReturnType = String.valueOf(RolfLectionUtil.getGenericReturnTypeHandle.invoke(method));
+                    int idx1 = genericReturnType.indexOf("<");
+                    int idx2 = genericReturnType.indexOf(">");
+
+                    String engineClassName = genericReturnType.substring(idx1 + 1, idx2).trim();
+
+                    engineClass = Class.forName(engineClassName, false, Global.class.getClassLoader());
+
+                    engineIsActiveHandle = lookup.findVirtual(engineClass, "isActive", MethodType.methodType(boolean.class));
+                }
+            }
+
+            for (Object method : engineControllerDelegateClass.getDeclaredMethods()) {
+                String methodName = (String) RolfLectionUtil.getMethodNameHandle.invoke(method);
+
+                if (methodName.equals("getEngineLocations")) {
+                    MethodType methodType = MethodType.methodType(List.class);
+                    getEngineLocationsHandle = lookup.findVirtual(engineControllerDelegateClass, "getEngineLocations", methodType);
+                    break;
+                }
+            }
+
+            for (Object field : engineGlowClass.getDeclaredFields()) {
+                Class<?> fieldType = (Class<?>) RolfLectionUtil.getFieldTypeHandle.invoke(field);
+                if (fieldType.equals(TexReflection.texClass)) {
+                    if (engineGlowTexField == null) {
+                        engineGlowTexField = field;
+                        RolfLectionUtil.setFieldAccessibleHandle.invoke(engineGlowTexField, true);
+
+                    } else if (engineGlowTexFieldSmall == null) {
+                        engineGlowTexFieldSmall = field;
+                        RolfLectionUtil.setFieldAccessibleHandle.invoke(engineGlowTexFieldSmall, true);
+
+                    }
+                } else if (fieldType.equals(Map.class)) {
+                    String genericType = String.valueOf(RolfLectionUtil.getGenericTypeHandle.invoke(field));
+
+                    if (!genericType.contains("ContrailEmitter")) {
+                        engineGlowDataClassMapField = field;
+                        RolfLectionUtil.setFieldAccessibleHandle.invoke(field, true);
+
+                        int commaIndex = genericType.indexOf(',');
+                        int endIndex = genericType.lastIndexOf('>');
+                        String dataClassName = genericType.substring(commaIndex + 1, endIndex).trim();
+
+                        Class<?> dataClassType = Class.forName(dataClassName, false, Global.class.getClassLoader());
+
+                        for (Object fielde : dataClassType.getFields()) {
+                            String fieldName = (String) RolfLectionUtil.getFieldNameHandle.invoke(fielde);
+
+                            if (fieldName.equals("class")) {
+                                engineGlowDataClassField = fielde;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            String texBindMethodName = (String) RolfLectionUtil.getMethodNameHandle.invoke(TexReflection.getTexBindMethod());
+
+            String inheritor = "package com.fs.graphics;\n";
+
+            inheritor += """
+            import java.util.List;
+            import java.util.ArrayList;
+            import java.util.Map;
+            import java.awt.Color;
+            import java.lang.invoke.MethodHandle;
+
+            import org.apache.log4j.Logger;
+
+            import org.lwjgl.opengl.GL11;
+
+            import data.scripts.util.RolfLectionUtil;
+
+            import com.fs.starfarer.api.Global;
+            import com.fs.starfarer.loading.specs.EngineSlot;
+            import com.fs.starfarer.api.combat.BaseEveryFrameCombatPlugin;
+            """;
+
+            inheritor += "public class TexWrapperSubclass extends " + TexReflection.texClass.getCanonicalName() + "{\n";
+            inheritor += """
+                    public TexWrapperSubclass(int arg0, int arg1, String[] spriteIds, List<java.lang.Object> engines, 
+                        List<EngineSlot> engineSlots, MethodHandle engineIsActiveHandle) {
+                    super(arg0, arg1);
+                    this.increments = spriteIds.length;
+                    this.texIds = new int[spriteIds.length];
+                    this.engineSlots = engineSlots;
+                    this.engines = engines;
+                    this.engineIsActiveHandle = engineIsActiveHandle;
+
+                    for (int i = 0; i < spriteIds.length; i++) {
+                        java.lang.Object texWrapper = (java.lang.Object) RolfLectionUtil.texObjectMap.get(spriteIds[i]);
+                        texIds[i] = RolfLectionUtil.getTexId(texWrapper);
+                    }
+
+                    RolfLectionUtil.setTexId(this, texIds[0]);
+
+                    Global.getCombatEngine().addPlugin(new BaseEveryFrameCombatPlugin() {
+                        @Override
+                        public void advance(float arg0, List<InputEventAPI> arg1) {
+                            frame++;
+                        }
+                    });
+                }
+
+                private int frame = 0;
+                private int lastUsedFrame = -1;
+
+                private final int increments;
+                private final int[] texIds;
+
+                private final java.util.List<com.fs.starfarer.loading.specs.EngineSlot> engineSlots;
+                private final java.util.List<java.lang.Object> engines;
+
+                private final MethodHandle engineIsActiveHandle;
+
+                private int incrementer = 0;
+                private Logger logger = Global.getLogger(Global.class);
+
+                private int count = 0;
+
+                @Override public int hashCode() {
+                    return count;
+                }
+
+                private java.lang.Object[] engineToCheck = new java.lang.Object[1];
+                private boolean isSkipped(int current) {
+                    engineToCheck[0] = engines.get(current);
+
+                    try {
+                        java.lang.Boolean isActive = (java.lang.Boolean) engineIsActiveHandle.invoke(engineToCheck); // janino doesnt into varargs
+                        return !((boolean) isActive);
+                    } catch (Throwable e) {
+                        throw new RuntimeException(e); 
+                    }
+                }
+
+                @Override
+                """;
+            inheritor += "public void " + texBindMethodName + "() {\n";
+            inheritor += """
+                            if (frame != lastUsedFrame) {
+                                incrementer = 0;
+                                lastUsedFrame = frame;
+                            }
+
+                            while (isSkipped(incrementer)) {
+                                incrementer = (incrementer + 1) % increments;
+                            }
+                    """;
+            inheritor += "RolfLectionUtil.setTexId(this, texIds[incrementer]);";
+            inheritor += "super." + texBindMethodName + "();";
+            inheritor += "incrementer = (incrementer + 1) % increments;}}";
+
+            SimpleCompiler compiler = new SimpleCompiler();
+            compiler.setParentClassLoader(RolfLectionUtil.class.getClassLoader());
+            compiler.cook(inheritor);
+
+            ourTexClassInheritor = compiler.getClassLoader().loadClass("com.fs.graphics.TexWrapperSubclass");
+            ourTexClassCtor = ourTexClassInheritor.getConstructor(new Class<?>[] {int.class, int.class, String[].class, 
+                                                                    List.class, List.class, MethodHandle.class
+                                                                });
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static class Shipe {
+        private final Object engineGlow;
+        private final List<EngineSlot> engineSlots;
+        private final List<Object> engines;
+
+        private static Boolean isEngineActive(Object... args) {
+            try {
+                return (Boolean) engineIsActiveHandle.invoke(args[0]);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public Shipe(ShipAPI shipApi, String stringTexId, String[] textures) {
+            try {
+                Object engineController = getEngineControllerHandle.invoke(shipApi);
+                this.engineGlow = getEngineGlowHandle.invoke(engineController);
+                
+                Object delegate = engineControllergetDelegateHandle.invoke(engineController);
+
+                this.engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
+                this.engineSlots = (List<EngineSlot>) getEngineLocationsHandle.invoke(delegate);
+                
+                Object ourTexInheritor = instantiateTexClassInheritor(textures, engineSlots, engines);
+
+                RolfLectionUtil.setFieldHandle.invoke(engineGlowTexField, engineGlow, ourTexInheritor);
+                RolfLectionUtil.setFieldHandle.invoke(engineGlowTexFieldSmall, engineGlow, ourTexInheritor);
+
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public static void init() {
+            try {
+                isEngineActiveHandle = MethodHandles.lookup().findStatic(Shipe.class, "isEngineActive", MethodType.methodType(Boolean.class, Object[].class));
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+            
+        }
+    }
+
+    public static Shipe shipe;
+
+    public static Object durr;
+
+    public static Object instantiateTexClassInheritor(String[] stringTexIds, List<EngineSlot> engineSlots, List<Object> engines) {
+        durr = RolfLectionUtil.instantiateClass(ourTexClassCtor, GL11.GL_TEXTURE_2D, 0, stringTexIds, engines, engineSlots, isEngineActiveHandle);
+        return durr;
+    }
+
+    public static void setEngineGlowTextures(ShipAPI shipApi, String texId, String[] textures) {
+        shipe = new Shipe(shipApi, texId, textures);
+    }
+
+    public static void init() {
+        Shipe.init();
+    }
+}
