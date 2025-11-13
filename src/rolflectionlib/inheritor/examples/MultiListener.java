@@ -1,7 +1,5 @@
 package rolflectionlib.inheritor.examples;
 
-import org.apache.log4j.Logger;
-
 import com.fs.starfarer.api.Global;
 
 import rolflectionlib.inheritor.Inherit;
@@ -15,8 +13,7 @@ import rolflectionlib.util.RolfLectionUtil;
 /**
  * Combines the dialogDismissed and actionPerformed listener interfaces into one subclass.
  */
-public class MultiListener {
-    private static final Logger logger = Global.getLogger(MultiListener.class);
+public abstract class MultiListener {
     private static final Object exampleSubClassConstructor;
 
     private final Object instance;
@@ -42,7 +39,7 @@ public class MultiListener {
         MethodHook dialogDismissed = new InterfaceMethodHook() {
             @Override
             public Object runInterface(Object... params) {
-                dialogDismissed(params);
+                dialogDismissed((Object)params[0], (int)params[1]);
                 return null; // return null as "dialogDismissed" is a void method
             }
         };
@@ -50,7 +47,7 @@ public class MultiListener {
         MethodHook actionPerformed = new InterfaceMethodHook() {
             @Override
             public Object runInterface(Object... params) {
-                actionPerformed(params);
+                actionPerformed(params[0], params[1]);
                 return null; // return null as "actionPerformed" is a void method
             }
         };
@@ -63,23 +60,21 @@ public class MultiListener {
         );
     }
 
-    public Object getInstance() {
+    public final Object getInstance() {
         return this.instance;
     }
 
-    public void dialogDismissed(Object... args) {
-        Object dialog = args[0];
-        int yesOrNo = (int) args[1];
+    public abstract void dialogDismissed(Object dialog, int yesOrNo);
 
-        logger.info(String.valueOf(dialog) + " dismissed with value: " + String.valueOf(yesOrNo));
-    }
+    public abstract void actionPerformed(Object inputEvent, Object uiElement);
 
-    public void actionPerformed(Object... args) {
-        Object uiElement = args[1];
-        Object inputEvent = args[0];
+    // public void dialogDismissed(Object dialog, int yesOrNo) {
+    //     logger.info(String.valueOf(dialog) + " dismissed with value: " + String.valueOf(yesOrNo));
+    // }
 
-        logger.info("actionPerformed called with UI element " + String.valueOf(uiElement) + " and input event " + String.valueOf(inputEvent));
-    }
+    // public void actionPerformed(Object inputEvent, Object uiElement) {
+    //     logger.info("actionPerformed called with UI element " + String.valueOf(uiElement) + " and input event " + String.valueOf(inputEvent));
+    // }
 
     /**
      * Init function to run to load the class and run the static block to assemble the inheritor class in onApplicationload
