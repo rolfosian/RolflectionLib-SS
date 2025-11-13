@@ -21,6 +21,8 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
+import com.fs.starfarer.combat.entities.Ship;
+
 import java.awt.Color;
 import java.util.*;
 
@@ -159,8 +161,40 @@ public class ClassRefs {
 
     /** Obfuscated Ship class */
     public static Class<?> shipClass;
+    public static Object shipCloneMethod;
+
+    public static Class<?> hullSpecClass;
+    public static Object hullSpecCloneMethod;
 
     static {
+
+        shipClass = Ship.class;
+        Object[] shipMethods = Ship.class.getDeclaredMethods();
+
+        outer:
+        for (int i = 0; i < shipMethods.length; i++) {
+            Object shipMethod = shipMethods[i];
+
+            switch(RolfLectionUtil.getMethodName(shipMethod)) {
+                case "clone":
+                    shipCloneMethod = shipMethod;
+                    continue;
+                
+                case "getHullSpec":
+                    hullSpecClass = RolfLectionUtil.getReturnType(shipMethod);
+                    Object[] hullSpecMethods = hullSpecClass.getDeclaredMethods();
+
+                    for (int j = 0; j < hullSpecMethods.length; j++) {
+                        Object hullSpecMethod = hullSpecMethods[j];
+                        if (RolfLectionUtil.getMethodName(hullSpecMethod).equals("clone")) {
+                            hullSpecCloneMethod = hullSpecMethod;
+                            continue outer;
+                        }
+                    }
+
+            }
+        }
+
         Class<?>[] interfaces = ObfuscatedClasses.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
             Class<?> interfc = interfaces[i];
@@ -469,6 +503,8 @@ public class ClassRefs {
                 break;
             }
         }
+
+        Cloner.init();
     }
 
     /**Dummy function to call to load the class and run the static block in onApplicationLoad */
