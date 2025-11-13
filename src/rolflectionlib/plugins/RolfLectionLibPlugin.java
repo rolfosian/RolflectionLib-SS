@@ -6,6 +6,10 @@ import org.apache.log4j.Logger;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.SectorEntityToken;
+
+import com.fs.starfarer.api.loading.Description;
+import com.fs.starfarer.loading.SpecStore;
 
 import rolflectionlib.inheritor.enginetex.EngineTex;
 import rolflectionlib.inheritor.examples.MultiListener;
@@ -21,7 +25,8 @@ import rolflectionlib.util.TexReflection;
 public class RolfLectionLibPlugin extends BaseModPlugin {
     private Logger logger = Global.getLogger(RolfLectionLibPlugin.class);
     
-    public static int frame = 0;
+    private static final String SAVE_TIMESTAMP_KEY = "$rlSaveTimestamp";
+    public static String SAVE_TIMESTAMP;
 
     @Override
     public void onApplicationLoad() {
@@ -34,38 +39,48 @@ public class RolfLectionLibPlugin extends BaseModPlugin {
         EngineTex.init();
         MultiListener.init();
 
-        // TODO account for different saves
-        // for (Object method : SpecStore.class.getDeclaredMethods()) {
-        //     if (RolfLectionUtil.getReturnType(method).equals(Map.class)) {
-        //         Misc.DESCRIPTION_MAP = (Map<String, Object>) RolfLectionUtil.invokeMethodDirectly(method, null, Description.class); // null instance param because it's a static method
-        //         break;
-        //     };
-        // }
+        for (Object method : SpecStore.class.getDeclaredMethods()) {
+            if (RolfLectionUtil.getReturnType(method).equals(Map.class)) {
+                Misc.DESCRIPTION_MAP = (Map<String, Object>) RolfLectionUtil.invokeMethodDirectly(method, null, Description.class); // null instance param because it's a static method
+                break;
+            };
+        }
     }
 
     @Override
     public void onGameLoad(boolean newGame) {
         Global.getSector().addTransientListener(new RolfLectionLibListener(false));
 
-        // For custom dynamic at runtime campaign entity descriptions TODO account for different saves
-        // Map<String, Object> persistentData = Global.getSector().getPersistentData();
-        // Map<String, Object> customStationDescs = (Map<String, Object>) persistentData.get(Misc.CUSTOM_DESC_PERSISTENT_DATA_KEY);
+        // For custom dynamic at runtime campaign entity descriptions
+        Map<String, Object> persistentData = Global.getSector().getPersistentData();
+        String saveTimestamp = (String) persistentData.get(SAVE_TIMESTAMP_KEY);
 
-        // if (customStationDescs != null) {
-        //     Misc.DESCRIPTION_MAP = new HashMap<>();
+        if (saveTimestamp == null) {
+            saveTimestamp = String.valueOf(System.currentTimeMillis());
 
-        //     for (Map.Entry<String, Object> entry : customStationDescs.entrySet()) {
-        //         Misc.DESCRIPTION_MAP.put(entry.getKey() + "_CUSTOM", entry.getValue());
+            persistentData.put(SAVE_TIMESTAMP_KEY, saveTimestamp);
+        }
 
-        //         SectorEntityToken token = Global.getSector().getEntityById(entry.getKey());
-        //         token.setCustomDescriptionId(token.getId());
-        //     }
+        if (!SAVE_TIMESTAMP.equals(saveTimestamp)) { // in case different save we need to remove different save descriptions
+            for (String key : Misc.CUSTOM_DESC_KEYS) {
+                Misc.DESCRIPTION_MAP.remove(key);
+            }
+            Misc.CUSTOM_DESC_KEYS.clear();
+        }
 
-        // } else {
-        //     Map<String, Object> descMap = new HashMap<>();
-        //     Misc.DESCRIPTION_MAP = descMap;
-        //     persistentData.put(Misc.CUSTOM_DESC_PERSISTENT_DATA_KEY, descMap);
-        // }
+        Map<String, Object> customStationDescs = (Map<String, Object>) persistentData.get(Misc.CUSTOM_DESC_PERSISTENT_DATA_KEY);
+        if (customStationDescs != null) {
+            for (Map.Entry<String, Object> entry : customStationDescs.entrySet()) {
+                Misc.DESCRIPTION_MAP.put(entry.getKey() + "_CUST", entry.getValue());
+
+                SectorEntityToken token = Global.getSector().getEntityById(entry.getKey());
+                token.setCustomDescriptionId(token.getId());
+            }
+        } else {
+            persistentData.put(Misc.CUSTOM_DESC_PERSISTENT_DATA_KEY, new HashMap<>());
+        }
+
+        SAVE_TIMESTAMP = saveTimestamp;
     }
 
     @Override
