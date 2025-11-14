@@ -18,13 +18,36 @@ public class Cloner {
 
     static {
         try {
+            outer:
             for (Class<?> cls : ObfuscatedClasses.getClasses()) {
                 List<Class<?>> interfaces = Arrays.asList(cls.getInterfaces());
     
+                if (interfaces.contains(Cloneable.class)) {    
+                    for (Object method : cls.getMethods()) {
+                        if (RolfLectionUtil.getMethodName(method).equals("clone")) {
+                            cloneMethodMap.put(cls, method);
+                            continue outer;
+                        }
+                    }
+                    
+                    cloneMethodMap.put(cls, RolfLectionUtil.getMethodFromSuperClass("clone", cls));
+                }
+            }
+
+            outer:
+            for (Class<?> cls : TexReflection.obfCommonClasses) {
+                List<Class<?>> interfaces = Arrays.asList(cls.getInterfaces());
+
                 if (interfaces.contains(Cloneable.class)) {
-                    cloneMethodMap.put(cls, cls.getMethod("clone"));
-                } 
-    
+                    for (Object method : cls.getMethods()) {
+                        if (RolfLectionUtil.getMethodName(method).equals("clone")) {
+                            cloneMethodMap.put(cls, method);
+                            continue outer;
+                        }
+                    }
+                    
+                    cloneMethodMap.put(cls, RolfLectionUtil.getMethodFromSuperClass("clone", cls));
+                }
             }
         } catch (Throwable e) {
             throw new RuntimeException(e);
