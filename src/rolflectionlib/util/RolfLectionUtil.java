@@ -719,7 +719,7 @@ public class RolfLectionUtil {
     }
 
     public static Object getMethodFromSuperClassAndInvokeDirectly(String methodName, Object instance, Object... arguments) {
-        Object method = getMethodFromSuperclass(methodName, instance);
+        Object method = getMethodFromSuperClass(methodName, instance);
         if (method == null) return null;
         return invokePrivateMethodDirectly(method, instance, arguments);
     }
@@ -805,6 +805,14 @@ public class RolfLectionUtil {
     public static Object instantiateClass(Object ctor, Object... args) {
         try {
             return RolfLectionUtil.constructorNewInstanceHandle.invoke(ctor, args);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Object getConstructor(Class<?> cls, Class<?>[] paramTypes) {
+        try {
+            return cls.getConstructor(paramTypes);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -909,9 +917,27 @@ public class RolfLectionUtil {
         return false;
     }
 
-    public static Object getMethodFromSuperclass(String methodName, Object instance) {
+    public static Object getMethodFromSuperClass(String methodName, Object instance) {
         try {
             Class<?> currentClass = instance.getClass();
+
+            while (currentClass != null) {
+                for (Object method : currentClass.getDeclaredMethods()) {
+                    if (getMethodNameHandle.invoke(method).equals(methodName)) {
+                        return method;
+                    }
+                }
+                currentClass = currentClass.getSuperclass();
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public static Object getMethodFromSuperClass(String methodName, Class<?> cls) {
+        try {
+            Class<?> currentClass = cls;
 
             while (currentClass != null) {
                 for (Object method : currentClass.getDeclaredMethods()) {
