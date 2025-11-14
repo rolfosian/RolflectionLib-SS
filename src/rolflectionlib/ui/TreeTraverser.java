@@ -58,14 +58,22 @@ public class TreeTraverser {
 
     private final Object parentPanel;
     private List<TreeNode> nodes;
+    private Map<UIPanelAPI, List<UIComponentAPI>> treeMap = null;
     private TreeNode targetNode = null;
     private UIComponentAPI targetChild = null;
     private int currentIndex;
     
-    // get entire panel tree
+    /**  Get entire panel tree */
     public TreeTraverser(Object parentPanel) {
         this.parentPanel = parentPanel;
         refresh();
+    }
+
+    /** Get entire panel tree and map parents to children */
+    public TreeTraverser(Object parentPanel, Map<UIPanelAPI, List<UIComponentAPI>> treeMap) {
+        this.parentPanel = parentPanel;
+        this.treeMap = treeMap;
+        refresh(treeMap);
     }
 
     // get panel tree up to depth before limit
@@ -84,6 +92,12 @@ public class TreeTraverser {
         this.nodes = new ArrayList<>();
         this.currentIndex = 0;
         this.getChildren((UIComponentAPI)parentPanel, 0);
+    }
+
+    public void refresh(Map<UIPanelAPI, List<UIComponentAPI>> treeMap) {
+        this.nodes = new ArrayList<>();
+        this.currentIndex = 0;
+        this.getChildren((UIComponentAPI)parentPanel, treeMap, 0);
     }
 
     public void refresh(int depthLimit) {
@@ -114,6 +128,22 @@ public class TreeTraverser {
         }
         return;
     }
+
+    private void getChildren(UIComponentAPI parent, Map<UIPanelAPI, List<UIComponentAPI>> treeMap, int depth) {
+        List<UIComponentAPI> children = ClassRefs.uiPanelClass.isInstance(parent) ? (List<UIComponentAPI>) RolfLectionUtil.invokeMethodDirectly(ClassRefs.uiPanelgetChildrenCopyMethod, parent) : null;
+
+        if (children != null && !children.isEmpty()) {
+            this.nodes.add(new TreeNode((UIPanelAPI)parent, children, depth));
+            treeMap.put((UIPanelAPI)parent, children);
+            depth++;
+
+            for (UIComponentAPI child : children) {
+                this.getChildren(child, treeMap, depth);
+            }
+        }
+        return;
+    }
+
 
     private void getChildren(UIComponentAPI parent, int depth, int depthLimit) {
         List<UIComponentAPI> children = ClassRefs.uiPanelClass.isInstance(parent) ? (List<UIComponentAPI>) RolfLectionUtil.invokeMethodDirectly(ClassRefs.uiPanelgetChildrenCopyMethod, parent) : null;
@@ -192,6 +222,16 @@ public class TreeTraverser {
         return this.nodes;
     }
 
+    /** Only returns non-null if map constructor was used */
+    public Map<UIPanelAPI, List<UIComponentAPI>> getTreeMap() {
+        return this.treeMap;
+    }
+
+    /** Only usable if map constructor was used otherwise will throw {@link NullPointerException}. */
+    public List<UIComponentAPI> getChildren(UIPanelAPI parent) {
+        return this.treeMap.get(parent);
+    }
+
     public TreeNode getCurrentNode() {
         return nodes.get(currentIndex);
     }
@@ -206,22 +246,26 @@ public class TreeTraverser {
         return result;
     }
     
+    /**Temporal level (Order in which components were added)*/
     public boolean goUpOneLevel() {
         if (currentIndex == 0) return false;
         currentIndex -= 1;
         return true;
     }
     
+    /**Temporal level (Order in which components were added)*/
     public boolean goDownOneLevel() {
         if (currentIndex >= nodes.size() - 1) return false;
         currentIndex += 1;
         return true;
     }
 
+    /**Temporal top (Order in which components were added) */
     public void toTop() {
         currentIndex = nodes.size() - 1;
     }
     
+    /** Temporal bottom (Order in which components were added) */
     public void toBottom() {
         currentIndex = 0;
     }
