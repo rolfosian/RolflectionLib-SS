@@ -10,7 +10,7 @@ import rolflectionlib.ui.OptionPanelListener;
 
 public class RolfLectionLibListener extends BaseCampaignEventListener{
     public static interface OptionPanelHook {
-        public void afterOptionSelected(Object optionData);
+        public void afterOptionSelected(OptionPanelListener listener, Object optionData);
     }
 
     private List<OptionPanelHook> optionPanelHooks = new ArrayList<>();
@@ -57,7 +57,7 @@ public class RolfLectionLibListener extends BaseCampaignEventListener{
         new OptionPanelListener(dialog) {
             @Override
             public void afterOptionSelected(Object optionData) {
-                for (OptionPanelHook hook : optionPanelHooks) hook.afterOptionSelected(optionData);
+                for (OptionPanelHook hook : optionPanelHooks) hook.afterOptionSelected(this, optionData);
             }
             
         };
