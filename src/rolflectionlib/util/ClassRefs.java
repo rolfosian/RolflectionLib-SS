@@ -279,17 +279,6 @@ public class ClassRefs {
                 uiPanelRemoveMethod = RolfLectionUtil.getMethodExplicit("remove", uiPanelClass, new Class<?>[]{ClassRefs.renderableUIElementInterface});
     
                 positionSetMethod = RolfLectionUtil.getMethod("set", RolfLectionUtil.getReturnType(uiPanelAddMethod), 1);
-
-                confirmDialogConstructor = RolfLectionUtil.getConstructor(confirmDialogClass, 
-                    new Class<?>[] {
-                        float.class,
-                        float.class,
-                        ClassRefs.uiPanelClass,
-                        ClassRefs.dialogDismissedInterface,
-                        String.class,
-                        String[].class
-                    }
-                );
                 continue;
             }
 
@@ -492,6 +481,18 @@ public class ClassRefs {
                     continue;
             }
         }
+
+        confirmDialogConstructor = RolfLectionUtil.getConstructor(
+            confirmDialogClass, 
+            new Class<?>[] {
+                float.class,
+                float.class,
+                ClassRefs.uiPanelClass,
+                ClassRefs.dialogDismissedInterface,
+                String.class,
+                String[].class
+            }
+        );
 
         CustomPanelAPI panel = Global.getSettings().createCustom(0f, 0f, null);
         TooltipMakerAPI tt = panel.createUIElement(0f, 0f, false);
