@@ -19,4 +19,6 @@
 
 - [EngineTex](./src/rolflectionlib/inheritor/enginetex/EngineTex.java) provides granular control over ship engine glow textures.
 
+- [Cloner](./src/rolflectionlib/util/Cloner.java) Clones various objects that implement the `Cloneable` interface such as the obfuscated ship hull spec object.
+
 - [UI Button hooks, custom dynamic campaign entity descriptions](./src/rolflectionlib/util/Misc.java), and more.
