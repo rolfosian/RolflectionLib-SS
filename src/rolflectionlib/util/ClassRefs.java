@@ -43,7 +43,7 @@ public class ClassRefs {
     /** The class that CampaignUIAPI.showConfirmDialog instantiates. We need this because showConfirmDialog doesn't work
      *  if any core UI is open. */
     public static Class<?> confirmDialogClass;
-    public static Class<?>[] confirmDialogClassParamTypes;
+    public static Object confirmDialogConstructor;
     public static Object confirmDialogGetHoloMethod;
     public static Object confirmDialogGetButtonMethod;
     public static Object confirmDialogGetInnerPanelMethod;
@@ -64,10 +64,7 @@ public class ClassRefs {
 
     /** Obfuscated UI panel class */
     public static Class<?> uiPanelClass;
-    public static Class<?>[] uiPanelClassConstructorParamTypes = new Class<?>[] {
-        float.class,
-        float.class,
-    };
+    public static Object uiPanelClassConstructor;
     public static Object uiPanelsetParentMethod;
     public static Object uiPanelsetOpacityMethod;
     public static Object uiPanelgetChildrenNonCopyMethod;
@@ -82,14 +79,7 @@ public class ClassRefs {
 
     /** Obfuscated fleet info panel class from the VisualPanelAPI */
     public static Class<?> visualPanelFleetInfoClass; 
-    public static Class<?>[] visualPanelFleetInfoClassParamTypes = new Class<?>[] {
-        String.class, // fleet 1 name
-        CampaignFleet.class, // fleet 1
-        String.class, // fleet 2 name
-        CampaignFleet.class, // fleet 2
-        FleetEncounterContextPlugin.class,
-        boolean.class // is before or after engagement? idk
-    };
+    public static Object visualPanelFleetInfoClassConstructor;
     public static Object visualPanelGetChildrenNonCopyMethod;
     public static Object optionPanelGetButtonToItemMapMethod;
     public static Object interactionDialogGetCoreUIMethod;
@@ -142,14 +132,7 @@ public class ClassRefs {
 
     /** Obfuscated InputEvent class */
     public static Class<?> inputEventClass;
-    public static Class<?>[] inputEventClassParamTypes = new Class<?>[] {
-        InputEventClass.class, // mouse or keyboard
-        InputEventType.class, // type of input
-        int.class, // x
-        int.class, // y
-        int.class, // key/mouse button, is -1 for mouse move
-        char.class // unused for mouse afaik, give '\0' for mouse prob
-    };
+    public static Object inputEventClassConstructor;
 
     /** method to get optionData from optionItem class that is the type of the values of the InteractionDialogAPI OptionPanel's buttonsToItemsMap */
     public static Object getOptionDataMethod;
@@ -207,6 +190,24 @@ public class ClassRefs {
             }
         }
 
+        Class<?>[] inputEventClassParamTypes = new Class<?>[] {
+            InputEventClass.class, // mouse or keyboard
+            InputEventType.class, // type of input
+            int.class, // x
+            int.class, // y
+            int.class, // key/mouse button, is -1 for mouse move
+            char.class // unused for mouse afaik, give '\0' for mouse prob
+        };
+
+        Class<?>[] visualPanelFleetInfoClassParamTypes = new Class<?>[] {
+            String.class, // fleet 1 name
+            CampaignFleet.class, // fleet 1
+            String.class, // fleet 2 name
+            CampaignFleet.class, // fleet 2
+            FleetEncounterContextPlugin.class,
+            boolean.class // is before or after engagement? idk
+        };
+
         Class<?>[] obfClasses = ObfuscatedClasses.getClasses();
         for (int i = 0; i < obfClasses.length; i++) {
             Class<?> cls = obfClasses[i];
@@ -239,6 +240,7 @@ public class ClassRefs {
 
                 Object buttonPressedMethod = RolfLectionUtil.getMethod("buttonPressed", buttonClass, 2);
                 inputEventClass = RolfLectionUtil.getMethodParamTypes(buttonPressedMethod)[0];
+                inputEventClassConstructor = RolfLectionUtil.getConstructor(inputEventClass, inputEventClassParamTypes);
                 continue;
             }
 
@@ -249,8 +251,10 @@ public class ClassRefs {
                 coreUIgetCurrentTabMethod = RolfLectionUtil.getMethod("getCurrentTab", coreUIClass, 0);
 
                 campaignUIScreenPanelField = RolfLectionUtil.getFieldByName("screenPanel", cls);
+
                 uiPanelClass = RolfLectionUtil.getFieldType(campaignUIScreenPanelField);
                 uiPanelSuperClass = uiPanelClass.getSuperclass();
+                uiPanelClassConstructor = RolfLectionUtil.getConstructor(uiPanelClass, new Class<?>[] {float.class, float.class});
                 
                 outer:
                 for (Class<?> interfc : uiPanelClass.getInterfaces()) {
@@ -276,14 +280,16 @@ public class ClassRefs {
     
                 positionSetMethod = RolfLectionUtil.getMethod("set", RolfLectionUtil.getReturnType(uiPanelAddMethod), 1);
 
-                confirmDialogClassParamTypes = new Class<?>[] {
-                    float.class,
-                    float.class,
-                    ClassRefs.uiPanelClass,
-                    ClassRefs.dialogDismissedInterface,
-                    String.class,
-                    String[].class
-                };
+                confirmDialogConstructor = RolfLectionUtil.getConstructor(confirmDialogClass, 
+                    new Class<?>[] {
+                        float.class,
+                        float.class,
+                        ClassRefs.uiPanelClass,
+                        ClassRefs.dialogDismissedInterface,
+                        String.class,
+                        String[].class
+                    }
+                );
                 continue;
             }
 
@@ -311,8 +317,9 @@ public class ClassRefs {
                             getOptionDataMethod = objReturnMethod;
                         }
                     }
-                    if (visualPanelFleetInfoClass == null && RolfLectionUtil.doInstantiationParamsMatch(cls, ClassRefs.visualPanelFleetInfoClassParamTypes)) {
+                    if (visualPanelFleetInfoClass == null && RolfLectionUtil.doInstantiationParamsMatch(cls, visualPanelFleetInfoClassParamTypes)) {
                         visualPanelFleetInfoClass = cls;
+                        visualPanelFleetInfoClassConstructor = RolfLectionUtil.getConstructor(visualPanelFleetInfoClass, visualPanelFleetInfoClassParamTypes);
                     }
                     continue;
 
