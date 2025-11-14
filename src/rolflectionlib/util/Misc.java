@@ -62,14 +62,15 @@ public class Misc {
     }
 
     public static Object createInputEventInstance(InputEventClass eventClass, InputEventType eventType, int x, int y, int val, char char_) {
-        return RolfLectionUtil.instantiateClass(ClassRefs.inputEventClass,
-        ClassRefs.inputEventClassParamTypes,
-        eventClass,
-        eventType,
-        x,
-        y,
-        val, // keyboard key or mouse button, is -1 for mouse move
-        char_ // char is only appicable for keyboard keys afaik, give '\0' for mouse prob
+        return RolfLectionUtil.instantiateClass(
+            ClassRefs.inputEventClassConstructor,
+            ClassRefs.inputEventClass,
+            eventClass,
+            eventType,
+            x,
+            y,
+            val, // keyboard key or mouse button, is -1 for mouse move
+            char_ // char is only appicable for keyboard keys afaik, give '\0' for mouse prob
         );
     }
 
@@ -128,8 +129,8 @@ public class Misc {
 
     public static Object createConfirmDialog(String text, String confirmText, String cancelText, float width, float height, DialogDismissedListener dialogListener, Object screenPanel) {
         return RolfLectionUtil.instantiateClass(
+            ClassRefs.confirmDialogConstructor,
             ClassRefs.confirmDialogClass,
-            ClassRefs.confirmDialogClassParamTypes,
             width,
             height,
             screenPanel,
