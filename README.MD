@@ -15,7 +15,7 @@
 - [TreeTraverser](./src/rolflectionlib/ui/TreeTraverser.java) UI Component tree utility class. Includes multiple constructors with varying degrees of overhead depending on what is needed.
 
 - [Option Panel Listener](./src/rolflectionlib/plugins/RolfLectionLibListener.java)
-  - Hooks `InteractionDialogAPI` option buttons and provides an `afterOptionSelected` method that gets called with selected `optionData` as parameter when options are selected. Includes getters on the `OptionPanelListener` class as the parameter to get the current options, the current option, and currently interacted comm directory entry if a person was interacted with.
+  - Hooks `InteractionDialogAPI` option buttons and provides an `afterOptionSelected` method that gets called with selected `optionData` as second parameter when options are selected. Includes getters on the `OptionPanelListener` class that is the first parameter to get the current options, the current option, and currently interacted comm directory entry data if a person was interacted with.
 
 - [EngineTex](./src/rolflectionlib/inheritor/enginetex/EngineTex.java) provides granular control over ship engine glow textures.
 
