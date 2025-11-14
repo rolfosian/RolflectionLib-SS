@@ -9,6 +9,8 @@ import com.fs.graphics.TextureLoader;
 import java.util.*;
 
 public class TexReflection {
+    public static Class<?>[] obfCommonClasses = ObfuscatedClasses.getAllObfClasses("fs.common_obf.jar").toArray(new Class<?>[0]);
+
     public static Object spriteTextureField;
     public static Object spriteTextureIdField;
 
@@ -63,7 +65,7 @@ public class TexReflection {
                 }
             }
 
-            for (Class<?> cls : ObfuscatedClasses.getAllObfClasses("fs.common_obf.jar")) {
+            for (Class<?> cls : obfCommonClasses) {
                 Object[] fields = cls.getDeclaredFields();
                 if (!(fields.length == 4)) continue;
     
