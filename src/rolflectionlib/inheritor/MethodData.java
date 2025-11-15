@@ -5,7 +5,7 @@ import org.objectweb.asm.Type;
 
 import rolflectionlib.util.RolfLectionUtil;
 
-public class MethodData implements Opcodes {
+public class MethodData {
     public final Object method;
     public final String methodName;
 
@@ -17,8 +17,16 @@ public class MethodData implements Opcodes {
 
     public final String declaringClassInternalName;
     public final boolean isInterfaceMethod;
+    public final boolean callSuper;
 
-    public MethodData(Object method) {
+    /**
+     * MethodData object to define class methods to hook
+     * @param method java.lang.reflect.Method object - The method to hook <p>
+     * <code>SuperClassMethodHook</code> corresponds with regular class methods. Sandwiches a super call between the two hooks given. Both parameters and return values may be altered at each stage here.</p><p>
+     * <code>InterfaceMethodHook</code> corresponds with interface methods being implemented.</p><p>
+     * @param callSuper Whether or not to call the super method. Irrelevant for interface methods. <p><code>OverrideMethodHook</code> corresponds to the given method when set to false.
+     */
+    public MethodData(Object method, boolean callSuper) {
         this.method = method;
 
         this.methodName = RolfLectionUtil.getMethodName(method);
@@ -30,14 +38,17 @@ public class MethodData implements Opcodes {
         this.declaringClassInternalName = Type.getInternalName(declaringClass);
         this.isInterfaceMethod = declaringClass.isInterface();
 
+        if (this.isInterfaceMethod) this.callSuper = true;
+        else this.callSuper = callSuper;
+
         String visibility = RolfLectionUtil.getVisibility(RolfLectionUtil.getMethodModifiers(method));
         switch(visibility) {
             case "public":
-                this.access = ACC_PUBLIC;
+                this.access = Opcodes.ACC_PUBLIC;
                 return;
                 
             case "protected":
-                this.access = ACC_PROTECTED;
+                this.access = Opcodes.ACC_PROTECTED;
                 return;
             
             default:

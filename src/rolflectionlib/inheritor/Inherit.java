@@ -26,6 +26,7 @@ public class Inherit implements Opcodes {
     private static final String preHookMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runBefore", MethodHook.class));
     private static final String postHookMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runAfter", MethodHook.class));
     private static final String runInterfaceMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runInterface", MethodHook.class));
+    private static final String runFullOverrideMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runFullOverride", MethodHook.class));
 
     /** Extends a given super class and hooks methods denoted by parameter array of {@link MethodData} objects.
      * 
@@ -159,7 +160,7 @@ public class Inherit implements Opcodes {
                     mv.visitLdcInsn(paramTypes.length);
     
                     mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-                    int arrayIdx = paramSlotSize(paramTypes) + 1;
+                    int arrayIdx = paramSlotSize(paramTypes);
                     mv.visitVarInsn(ASTORE, arrayIdx);
                     currSlot = incrementSlot(currSlot, Object[].class);
     
@@ -171,6 +172,19 @@ public class Inherit implements Opcodes {
     
                         if (paramTypes[j].isPrimitive()) box(mv, Type.getType(paramTypes[j]));
                         mv.visitInsn(AASTORE);
+                    }
+
+                    if (!methodData.callSuper) {
+                        if (returnType == void.class) {
+                            // goto the void return clause and invoke full override with parameters
+                            gotoReturnVoidWithParams(internalName, mv, arrayIdx, i);
+                            continue;
+                            
+                        } else {
+                            // goto the value return clause and invoke full override with parameters
+                            gotoReturnValueWithParams(internalName, returnType, isPrimitiveReturnType, mv, arrayIdx, i);
+                            continue;
+                        }
                     }
                     
                     if (!methodData.isInterfaceMethod) {
@@ -209,6 +223,7 @@ public class Inherit implements Opcodes {
                         if (!methodData.isInterfaceMethod) {
                             mv.visitMethodInsn(INVOKESPECIAL, superName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
                             // call runAfter with null and discard its return
+
                             mv.visitVarInsn(ALOAD, 0);
                             mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
                             mv.visitInsn(ACONST_NULL);
@@ -228,6 +243,7 @@ public class Inherit implements Opcodes {
                         
                     } else {
                         if (!methodData.isInterfaceMethod) {
+                            // invoke super method
                             mv.visitMethodInsn(INVOKESPECIAL, superName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
                             if (isPrimitiveReturnType) box(mv, Type.getType(returnType));
 
@@ -253,6 +269,20 @@ public class Inherit implements Opcodes {
                     }
 
                 } else {
+                    if (!methodData.callSuper) {
+                        if (returnType == void.class) {
+                            // goto the void return clause and invoke full override
+                            gotoReturnVoidNoParams(internalName, mv, i);
+                            continue;
+                            
+                        } else {
+                             // goto the value return clause and invoke full override
+                            gotoReturnValueNoParams(internalName, returnType, isPrimitiveReturnType, mv, i);
+                            continue;
+                           
+                        }
+                    }
+
                     // invoke prehook with null
                     if (!methodData.isInterfaceMethod) {
                         mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor); 
@@ -314,6 +344,63 @@ public class Inherit implements Opcodes {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void gotoReturnVoidWithParams(String internalName, MethodVisitor mv, int arrayIdx, int methodIdx) {
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + methodIdx, methodHookDescriptor);
+        mv.visitVarInsn(ALOAD, arrayIdx);
+        mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runFullOverride", runFullOverrideMethodDescriptor, true);
+        mv.visitInsn(POP);
+        mv.visitInsn(RETURN);
+
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    private static void gotoReturnValueWithParams(String internalName, Class<?> returnType, boolean isPrimitiveReturnType, MethodVisitor mv, int arrayIdx, int methodIdx) {
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + methodIdx, methodHookDescriptor);
+        mv.visitVarInsn(ALOAD, arrayIdx);
+        mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runFullOverride", runFullOverrideMethodDescriptor, true);
+
+        if (isPrimitiveReturnType) unbox(mv, Type.getType(returnType));
+        else mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
+        mv.visitInsn(getReturnOpcode(returnType));
+
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    private static void gotoReturnVoidNoParams(String internalName, MethodVisitor mv, int methodIdx) {
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + methodIdx, methodHookDescriptor);
+        mv.visitInsn(ACONST_NULL);
+
+        mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runFullOverride", runFullOverrideMethodDescriptor, true);
+
+        mv.visitInsn(POP);
+        mv.visitInsn(RETURN);
+
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    private static void gotoReturnValueNoParams(String internalName, Class<?> returnType, boolean isPrimitiveReturnType, MethodVisitor mv, int methodIdx) {
+        mv.visitInsn(ACONST_NULL);
+
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + methodIdx, methodHookDescriptor);
+
+        mv.visitInsn(SWAP);
+        mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runFullOverride", runFullOverrideMethodDescriptor, true);
+        
+        if (isPrimitiveReturnType) unbox(mv, Type.getType(returnType));
+        else mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
+        mv.visitInsn(getReturnOpcode(returnType));
+
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
     }
 
         /** Implements a given array of interfaces and hooks their methods denoted by an array of {@link MethodData} objects.
