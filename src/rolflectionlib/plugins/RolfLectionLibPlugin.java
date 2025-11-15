@@ -82,7 +82,6 @@ public class RolfLectionLibPlugin extends BaseModPlugin {
                 Misc.DESCRIPTION_MAP.put(entry.getKey() + "_CUSTOM", entry.getValue());
 
                 SectorEntityToken token = Global.getSector().getEntityById(entry.getKey());
-                print(new ArrayList(token.getTags()));
                 token.setCustomDescriptionId(token.getId());
             }
         } else {
