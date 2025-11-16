@@ -28,12 +28,12 @@ public class EngineTexASM implements Opcodes {
         cw.visit(V17, ACC_PUBLIC, internalName, null, superName, new String[]{interfaceName});
 
         // fields
-        cw.visitField(ACC_PRIVATE, "increments", "I", null, null).visitEnd();
+        cw.visitField(ACC_PRIVATE, "enginesTotal", "I", null, null).visitEnd();
         cw.visitField(ACC_PRIVATE, "texIds", "[I", null, null).visitEnd();
         cw.visitField(ACC_PRIVATE | ACC_FINAL, "engines", "Ljava/util/List;", "Ljava/util/List<" + engineDesc + ">;", null).visitEnd();
 
         cw.visitField(ACC_PRIVATE, "lastUsedFrame", "I", null, null).visitEnd();
-        cw.visitField(ACC_PRIVATE, "incrementer", "I", null, null).visitEnd();
+        cw.visitField(ACC_PRIVATE, "engineIndex", "I", null, null).visitEnd();
         cw.visitField(ACC_PRIVATE, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;", null, null).visitEnd();
 
         // Constructor: public EngineTex(int arg0, int arg1, int[] texIds, List<engineClass> engines)
@@ -51,21 +51,21 @@ public class EngineTexASM implements Opcodes {
         mv2.visitVarInsn(ILOAD, 2);
         mv2.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "(II)V", false);
 
-        // this.increments = texIds.length
+        // this.enginesTotal = texIds.length
         mv2.visitVarInsn(ALOAD, 0);
         mv2.visitVarInsn(ALOAD, 3); // Load texIds array
         mv2.visitInsn(ARRAYLENGTH); // Get array length
-        mv2.visitFieldInsn(PUTFIELD, internalName, "increments", "I");
+        mv2.visitFieldInsn(PUTFIELD, internalName, "enginesTotal", "I");
 
         // this.texIds = texIds (direct assignment)
         mv2.visitVarInsn(ALOAD, 0);
         mv2.visitVarInsn(ALOAD, 3); // Load texIds array parameter
         mv2.visitFieldInsn(PUTFIELD, internalName, "texIds", "[I");
 
-        // this.incrementer = 0;
+        // this.engineIndex = 0;
         mv2.visitVarInsn(ALOAD, 0);
         mv2.visitInsn(ICONST_0);
-        mv2.visitFieldInsn(PUTFIELD, internalName, "incrementer", "I");
+        mv2.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I");
 
         // this.lastUsedFrame = -1
         mv2.visitVarInsn(ALOAD, 0);
@@ -95,11 +95,11 @@ public class EngineTexASM implements Opcodes {
         mv.visitVarInsn(ILOAD, 2);
         mv.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "(II)V", false);
 
-        // this.increments = spriteIds.length
+        // this.enginesTotal = spriteIds.length
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 3); // Load spriteIds array
         mv.visitInsn(ARRAYLENGTH); // Get array length
-        mv.visitFieldInsn(PUTFIELD, internalName, "increments", "I");
+        mv.visitFieldInsn(PUTFIELD, internalName, "enginesTotal", "I");
 
         // this.texIds = new int[spriteIds.length]
         mv.visitVarInsn(ALOAD, 0);
@@ -108,10 +108,10 @@ public class EngineTexASM implements Opcodes {
         mv.visitIntInsn(NEWARRAY, T_INT); // Create new int array
         mv.visitFieldInsn(PUTFIELD, internalName, "texIds", "[I");
 
-        // this.incrementer = 0;
+        // this.engineIndex = 0;
         mv.visitVarInsn(ALOAD, 0);
         mv.visitInsn(ICONST_0);
-        mv.visitFieldInsn(PUTFIELD, internalName, "incrementer", "I");
+        mv.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I");
 
         // this.lastUsedFrame = -1
         mv.visitVarInsn(ALOAD, 0);
@@ -171,21 +171,21 @@ public class EngineTexASM implements Opcodes {
         mv3.visitVarInsn(ILOAD, 2);
         mv3.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "(II)V", false);
 
-        // this.increments = texIds.length
+        // this.enginesTotal = texIds.length
         mv3.visitVarInsn(ALOAD, 0);
         mv3.visitVarInsn(ALOAD, 3); // Load texIds array
         mv3.visitInsn(ARRAYLENGTH); // Get array length
-        mv3.visitFieldInsn(PUTFIELD, internalName, "increments", "I");
+        mv3.visitFieldInsn(PUTFIELD, internalName, "enginesTotal", "I");
 
         // this.texIds = texIds (direct assignment)
         mv3.visitVarInsn(ALOAD, 0);
         mv3.visitVarInsn(ALOAD, 3); // Load texIds array parameter
         mv3.visitFieldInsn(PUTFIELD, internalName, "texIds", "[I");
 
-        // this.incrementer = 0;
+        // this.engineIndex = 0;
         mv3.visitVarInsn(ALOAD, 0);
         mv3.visitInsn(ICONST_0);
-        mv3.visitFieldInsn(PUTFIELD, internalName, "incrementer", "I");
+        mv3.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I");
 
         // this.lastUsedFrame = -1
         mv3.visitVarInsn(ALOAD, 0);
@@ -220,11 +220,11 @@ public class EngineTexASM implements Opcodes {
         mv4.visitVarInsn(ILOAD, 2);
         mv4.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "(II)V", false);
 
-        // this.increments = spriteIds.length
+        // this.enginesTotal = spriteIds.length
         mv4.visitVarInsn(ALOAD, 0);
         mv4.visitVarInsn(ALOAD, 3); // Load spriteIds array
         mv4.visitInsn(ARRAYLENGTH); // Get array length
-        mv4.visitFieldInsn(PUTFIELD, internalName, "increments", "I");
+        mv4.visitFieldInsn(PUTFIELD, internalName, "enginesTotal", "I");
 
         // this.texIds = new int[spriteIds.length]
         mv4.visitVarInsn(ALOAD, 0);
@@ -233,10 +233,10 @@ public class EngineTexASM implements Opcodes {
         mv4.visitIntInsn(NEWARRAY, T_INT); // Create new int array
         mv4.visitFieldInsn(PUTFIELD, internalName, "texIds", "[I");
 
-        // this.incrementer = 0;
+        // this.engineIndex = 0;
         mv4.visitVarInsn(ALOAD, 0);
         mv4.visitInsn(ICONST_0);
-        mv4.visitFieldInsn(PUTFIELD, internalName, "incrementer", "I");
+        mv4.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I");
 
         // this.lastUsedFrame = -1
         mv4.visitVarInsn(ALOAD, 0);
@@ -290,20 +290,20 @@ public class EngineTexASM implements Opcodes {
         // public void texBindMethodName() {
         //     boolean isRollover = false;
         //     if (rolflectionlib.plugins.RolfLectionLibPlugin.frame != this.lastUsedFrame) {
-        //         this.incrementer = 0;
+        //         this.engineIndex = 0;
         //         this.lastUsedFrame = rolflectionlib.plugins.RolfLectionLibPlugin.frame;
         //         isRollover = true;
         //     }
         //
-        //     while (!this.engines.get(incrementer).isActive()) {
-        //         this.incrementer = (this.incrementer + this.increments) % increments;
+        //     while (!this.engines.get(engineIndex).isActive()) {
+        //         this.engineIndex = (this.engineIndex + this.enginesTotal) % enginesTotal;
         //     }
         //
-        //     this.engineTexDelegate.onTexBind(incrementer, isRollover);
+        //     this.engineTexDelegate.onTexBind(engineIndex, isRollover);
         //
-        //     rolflectionlib.util.TexReflection.setTexId(this, this.texIds[this.incrementer]);
+        //     rolflectionlib.util.TexReflection.setTexId(this, this.texIds[this.engineIndex]);
         //     super.texBindMethodName();
-        //     this.incrementer = (this.incrementer + 1) % this.increments;
+        //     this.engineIndex = (this.engineIndex + 1) % this.enginesTotal;
         // }
         MethodVisitor bind = cw.visitMethod(ACC_PUBLIC, texBindMethodName, "()V", null, null);
         bind.visitCode();
@@ -318,10 +318,10 @@ public class EngineTexASM implements Opcodes {
         bind.visitFieldInsn(GETFIELD, internalName, "lastUsedFrame", "I");
         bind.visitJumpInsn(IF_ICMPEQ, ifEnd); // if (frame == lastUsedFrame) goto ifEnd
         
-        //     this.incrementer = 0;
+        //     this.engineIndex = 0;
         bind.visitVarInsn(ALOAD, 0);
         bind.visitInsn(ICONST_0);
-        bind.visitFieldInsn(PUTFIELD, internalName, "incrementer", "I");
+        bind.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I");
 
         // isRolloverEngine = true
         bind.visitInsn(ICONST_1); // Push true
@@ -334,8 +334,8 @@ public class EngineTexASM implements Opcodes {
         
         bind.visitLabel(ifEnd);
 
-        // while (!this.engines.get(this.incrementer).isActive()) {
-        //     this.incrementer = (this.incrementer + 1) % increments;
+        // while (!this.engines.get(this.engineIndex).isActive()) {
+        //     this.engineIndex = (this.engineIndex + 1) % enginesTotal;
         // }
         Label whileStart = new Label();
         Label whileEnd = new Label();
@@ -345,11 +345,11 @@ public class EngineTexASM implements Opcodes {
         bind.visitVarInsn(ALOAD, 0);
         bind.visitFieldInsn(GETFIELD, internalName, "engines", "Ljava/util/List;");
         
-        // Load this.incrementer
+        // Load this.engineIndex
         bind.visitVarInsn(ALOAD, 0);
-        bind.visitFieldInsn(GETFIELD, internalName, "incrementer", "I");
+        bind.visitFieldInsn(GETFIELD, internalName, "engineIndex", "I");
         
-        // Call engines.get(incrementer)
+        // Call engines.get(engineIndex)
         bind.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "get", "(I)Ljava/lang/Object;", true);
         
         // Cast to engine class and call isActive()
@@ -359,62 +359,62 @@ public class EngineTexASM implements Opcodes {
         // If isActive() returns true, exit loop
         bind.visitJumpInsn(IFNE, whileEnd);
         
-        // If not active, increment: this.incrementer = (this.incrementer + 1) % increments
+        // If not active, increment: this.engineIndex = (this.engineIndex + 1) % enginesTotal
         bind.visitVarInsn(ALOAD, 0); // Load this
         bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "incrementer", "I"); // Load incrementer
+        bind.visitFieldInsn(GETFIELD, internalName, "engineIndex", "I"); // Load engineIndex
         bind.visitInsn(ICONST_1); // Push 1
-        bind.visitInsn(IADD); // incrementer + 1
+        bind.visitInsn(IADD); // engineIndex + 1
         bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "increments", "I"); // Load increments
-        bind.visitInsn(IREM); // (incrementer + 1) % increments
-        bind.visitFieldInsn(PUTFIELD, internalName, "incrementer", "I"); // Store result
+        bind.visitFieldInsn(GETFIELD, internalName, "enginesTotal", "I"); // Load enginesTotal
+        bind.visitInsn(IREM); // (engineIndex + 1) % enginesTotal
+        bind.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I"); // Store result
         
         // Loop back
         bind.visitJumpInsn(GOTO, whileStart);
         bind.visitLabel(whileEnd);
 
         // if (this.engineTexDelegate != null) {
-        //     this.engineTexDelegate.onTexBind(this.incrementer);
+        //     this.engineTexDelegate.onTexBind(this.engineIndex);
         // }
         Label delegateNull = new Label();
         bind.visitVarInsn(ALOAD, 0); // Load this
         bind.visitFieldInsn(GETFIELD, internalName, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;"); // Load engineTexDelegate
         bind.visitJumpInsn(IFNULL, delegateNull); // if (engineTexDelegate == null) goto delegateNull
         
-        // Call onTexBind(incrementer, isRolloverEngine)
+        // Call onTexBind(engineIndex, isRolloverEngine)
         bind.visitVarInsn(ALOAD, 0); // Load this
         bind.visitFieldInsn(GETFIELD, internalName, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;"); // Load engineTexDelegate
         bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "incrementer", "I"); // Load incrementer
+        bind.visitFieldInsn(GETFIELD, internalName, "engineIndex", "I"); // Load engineIndex
         bind.visitVarInsn(ILOAD, 1); // Load isRolloverEngine
         bind.visitMethodInsn(INVOKEVIRTUAL, "rolflectionlib/inheritor/enginetex/EngineTexDelegate", "onTexBind", "(IZ)V", false);
         
         bind.visitLabel(delegateNull);
         
-        // TexReflection.setTexId(this, this.texIds[this.incrementer]);
+        // TexReflection.setTexId(this, this.texIds[this.engineIndex]);
         bind.visitVarInsn(ALOAD, 0); // Load this
         bind.visitVarInsn(ALOAD, 0); // Load this
         bind.visitFieldInsn(GETFIELD, internalName, "texIds", "[I"); // Load texIds array
         bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "incrementer", "I"); // Load incrementer
-        bind.visitInsn(IALOAD); // Load texIds[incrementer]
+        bind.visitFieldInsn(GETFIELD, internalName, "engineIndex", "I"); // Load engineIndex
+        bind.visitInsn(IALOAD); // Load texIds[engineIndex]
         bind.visitMethodInsn(INVOKESTATIC, "rolflectionlib/util/TexReflection", "setTexId", "(Ljava/lang/Object;I)V", false);
         
         // super.texBindMethodName();
         bind.visitVarInsn(ALOAD, 0);
         bind.visitMethodInsn(INVOKESPECIAL, superName, texBindMethodName, "()V", false);
         
-        // this.incrementer = (this.incrementer + 1) % this.increments;
+        // this.engineIndex = (this.engineIndex + 1) % this.enginesTotal;
         bind.visitVarInsn(ALOAD, 0); // Load this
         bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "incrementer", "I"); // Load incrementer
+        bind.visitFieldInsn(GETFIELD, internalName, "engineIndex", "I"); // Load engineIndex
         bind.visitInsn(ICONST_1); // Push 1
-        bind.visitInsn(IADD); // incrementer + 1
+        bind.visitInsn(IADD); // engineIndex + 1
         bind.visitVarInsn(ALOAD, 0); // Load this
-        bind.visitFieldInsn(GETFIELD, internalName, "increments", "I"); // Load increments
-        bind.visitInsn(IREM); // (incrementer + 1) % increments
-        bind.visitFieldInsn(PUTFIELD, internalName, "incrementer", "I");
+        bind.visitFieldInsn(GETFIELD, internalName, "enginesTotal", "I"); // Load enginesTotal
+        bind.visitInsn(IREM); // (engineIndex + 1) % enginesTotal
+        bind.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I");
         
         bind.visitInsn(RETURN);
         bind.visitMaxs(0, 0);
@@ -423,7 +423,7 @@ public class EngineTexASM implements Opcodes {
         // Implement EngineTexInterface.setTexIds(int[] texIds)
         // public void setTexIds(int[] texIds) {
         //     this.texIds = texIds;
-        //     this.increments = texIds.length;
+        //     this.enginesTotal = texIds.length;
         // }
         MethodVisitor setTexIds = cw.visitMethod(ACC_PUBLIC, "setTexIds", "([I)V", null, null);
         setTexIds.visitCode();
@@ -433,11 +433,11 @@ public class EngineTexASM implements Opcodes {
         setTexIds.visitVarInsn(ALOAD, 1); // Load texIds parameter
         setTexIds.visitFieldInsn(PUTFIELD, internalName, "texIds", "[I");
         
-        // this.increments = texIds.length
+        // this.enginesTotal = texIds.length
         setTexIds.visitVarInsn(ALOAD, 0); // Load this
         setTexIds.visitVarInsn(ALOAD, 1); // Load texIds parameter
         setTexIds.visitInsn(ARRAYLENGTH); // Get array length
-        setTexIds.visitFieldInsn(PUTFIELD, internalName, "increments", "I");
+        setTexIds.visitFieldInsn(PUTFIELD, internalName, "enginesTotal", "I");
         
         setTexIds.visitInsn(RETURN);
         setTexIds.visitMaxs(0, 0);
