@@ -155,14 +155,12 @@ public class Inherit implements Opcodes {
 
                 boolean isPrimitiveReturnType = returnType.isPrimitive();
 
-                int currSlot = 1;
                 if (paramTypes.length > 0) {
                     mv.visitLdcInsn(paramTypes.length);
     
                     mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
                     int arrayIdx = paramSlotSize(paramTypes);
                     mv.visitVarInsn(ASTORE, arrayIdx);
-                    currSlot = incrementSlot(currSlot, Object[].class);
     
                     for (int j = 0; j < paramTypes.length; j++) {
                         mv.visitVarInsn(ALOAD, arrayIdx); // load array reference
@@ -499,14 +497,12 @@ public class Inherit implements Opcodes {
 
                 boolean isPrimitiveReturnType = returnType.isPrimitive();
 
-                int currSlot = 1;
                 if (paramTypes.length > 0) {
                     mv.visitLdcInsn(paramTypes.length);
     
                     mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
                     int arrayIdx = paramSlotSize(paramTypes) + 1;
                     mv.visitVarInsn(ASTORE, arrayIdx);
-                    currSlot = incrementSlot(currSlot, Object[].class);
     
                     for (int j = 0; j < paramTypes.length; j++) {
                         mv.visitVarInsn(ALOAD, arrayIdx); // load array reference
@@ -624,10 +620,6 @@ public class Inherit implements Opcodes {
     protected static void popStack(MethodVisitor mv, Class<?> type) {
         if (type == long.class || type == double.class) mv.visitInsn(POP2);
         else mv.visitInsn(POP);
-    }
-
-    protected static int incrementSlot(int currSlot, Class<?> type) {
-        return currSlot + ((type == long.class || type == double.class) ? 2 : 1);
     }
 
     protected static int paramSlot(Class<?>[] params, int index) {
