@@ -28,6 +28,26 @@ public class Inherit implements Opcodes {
     private static final String runInterfaceMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runInterface", MethodHook.class));
     private static final String runFullOverrideMethodDescriptor = Type.getMethodDescriptor(RolfLectionUtil.getMethod("runFullOverride", MethodHook.class));
 
+
+    /** Extends a given super class and exposes methods denoted by parameter array of {@link MethodDataPair} objects.
+     * 
+     * @param superClass    Super class to extend
+     * @param interfacesToImplement    Any interfaces to implement, can be null
+     * @param superClassConstructor    Which super class constructor to use
+     * @param inheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
+     * @param methodDataPairs   Array of {@link MethodDataPair} objects to denote which super methods to invoke directly internally by a custom interface thereby eliminating reflection overhead. Said interface must be included in the <b>interfacesToImplement</b> parameter.
+     * @return Desired sub class with exposed functions denoted by custom interface arrangement.
+     */
+    public static Class<?> extendClass(
+            Class<?> superClass,
+            Class<?>[] interfacesToImplement,
+            Object superClassConstructor,
+            String inheritorName,
+            MethodDataPair[] methodDataPairs
+        ) {
+        return extendClass(superClass, interfacesToImplement, superClassConstructor, inheritorName, null, methodDataPairs, null);
+    }
+
     /** Extends a given super class and hooks methods denoted by parameter array of {@link MethodData} objects.
      * 
      * @param superClass    Super class to extend
@@ -45,7 +65,29 @@ public class Inherit implements Opcodes {
             String inheritorName,
             MethodData[] methodDataArray
         ) {
-        return extendClass(superClass, interfacesToImplement, superClassConstructor, inheritorName, methodDataArray, null);
+        return extendClass(superClass, interfacesToImplement, superClassConstructor, inheritorName, methodDataArray, null, null);
+    }
+
+        /** Extends a given super class and hooks methods denoted by parameter array of {@link MethodData} objects.
+     * 
+     * @param superClass    Super class to extend
+     * @param interfacesToImplement    Any interfaces to implement, can be null
+     * @param superClassConstructor    Which super class constructor to use
+     * @param inheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
+     * @param methodDataArray Array of {@link MethodData} objects to denote which methods to hook.
+     *          - <i><b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b></i>
+     * @param methodDataPairs   Array of {@link MethodDataPair} objects to denote which super methods to invoke directly internally by a custom interface thereby eliminating reflection overhead. Said interface must be included in the <b>interfacesToImplement</b> parameter.
+     * @return Desired sub class with pre and post hooked functions and exposed functions denoted by the custom interface MethodDataPair arrangement.
+     */
+    public static Class<?> extendClass(
+            Class<?> superClass,
+            Class<?>[] interfacesToImplement,
+            Object superClassConstructor,
+            String inheritorName,
+            MethodData[] methodDataArray,
+            MethodDataPair[] methodDataPairs
+        ) {
+        return extendClass(superClass, interfacesToImplement, superClassConstructor, inheritorName, methodDataArray, methodDataPairs, null);
     }
 
     /** Extends a given super class and hooks methods denoted by parameter array of {@link MethodData} objects.
@@ -54,10 +96,11 @@ public class Inherit implements Opcodes {
      * @param interfacesToImplement    Any interfaces to implement, can be null
      * @param superClassConstructor    Which super class constructor to use
      * @param inheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
-     * @param methodDataArray array of {@link MethodData} objects to denote which methods to hook.
-     *          - <i><b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b>
+     * @param methodDataArray Array of {@link MethodData} objects to denote which methods to hook.
+     *          - <i><b>This array's order is important to note as the hooks pertaining to these methods given when constructing the resulting inheritor class must be passed in this same order.</b></i>
+     * @param methodDataPairs   Array of {@link MethodDataPair} objects to denote which super methods to invoke directly internally by a custom interface thereby eliminating reflection overhead. Said interface must be included in the <b>interfacesToImplement</b> parameter.
      * @param binaryDumpFilePath File path to dump binary of result if wanted, should be null unless debugging. e.g. <code>Global.getSettings().getModManager().getModSpec("rolflection_lib").getPath() + "/src/rolflectionlib/inheritor/example/MultiListenerDump.class"</code>
-     * @return Desired sub class with pre and post hooked functions.
+     * @return Desired sub class with pre and post hooked functions and exposed functions denoted by the custom interface MethodDataPair arrangement.
      */
     public static Class<?> extendClass(
             Class<?> superClass,
@@ -65,6 +108,7 @@ public class Inherit implements Opcodes {
             Object superClassConstructor,
             String inheritorName,
             MethodData[] methodDataArray,
+            MethodDataPair[] methodDataPairs,
             String binaryDumpFilePath
         ) {
             String[] interfaceNames = null;
@@ -93,7 +137,6 @@ public class Inherit implements Opcodes {
 
             // define ctor
             Class<?>[] ctorParamTypes = RolfLectionUtil.getConstructorParamTypes(superClassConstructor);
-            Type[] types = new Type[ctorParamTypes.length];
 
             String ctorDescriptor = origCtorDesc;
             int bracketIndex = ctorDescriptor.lastIndexOf(")");
@@ -102,7 +145,6 @@ public class Inherit implements Opcodes {
             for (int i = 0; i < methodDataArray.length; i++) ctorDescriptor += methodHookDescriptor;
             ctorDescriptor += ")V";
 
-            for (int i = 0; i < ctorParamTypes.length; i++) types[i] = Type.getType(ctorParamTypes[i]);
             MethodVisitor ctor = cw.visitMethod(
                 ACC_PUBLIC,
                 "<init>",
@@ -136,196 +178,233 @@ public class Inherit implements Opcodes {
             ctor.visitEnd();
 
             // hook methods
-            for (int i = 0; i < methodDataArray.length; i++) {
-                MethodData methodData = methodDataArray[i];
-
-                MethodVisitor mv = cw.visitMethod(
-                    methodData.access,
-                    methodData.methodName,
-                    methodData.descriptor,
-                    null,
-                    null
-                );
-                mv.visitCode();
-
-                mv.visitVarInsn(ALOAD, 0);
-
-                Class<?> returnType = methodData.returnType;
-                Class<?>[] paramTypes = methodData.paramTypes;
-
-                boolean isPrimitiveReturnType = returnType.isPrimitive();
-
-                if (paramTypes.length > 0) {
-                    mv.visitLdcInsn(paramTypes.length);
+            if (methodDataArray != null) {
+                for (int i = 0; i < methodDataArray.length; i++) {
+                    MethodData methodData = methodDataArray[i];
     
-                    mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-                    int arrayIdx = paramSlotSize(paramTypes);
-                    mv.visitVarInsn(ASTORE, arrayIdx);
+                    MethodVisitor mv = cw.visitMethod(
+                        methodData.access,
+                        methodData.methodName,
+                        methodData.descriptor,
+                        null,
+                        null
+                    );
+                    mv.visitCode();
     
-                    for (int j = 0; j < paramTypes.length; j++) {
-                        mv.visitVarInsn(ALOAD, arrayIdx); // load array reference
-                        mv.visitLdcInsn(j);                 // array index
+                    mv.visitVarInsn(ALOAD, 0);
     
-                        load(mv, paramTypes[j], paramSlot(paramTypes, j)); // store in array
+                    Class<?> returnType = methodData.returnType;
+                    Class<?>[] paramTypes = methodData.paramTypes;
     
-                        if (paramTypes[j].isPrimitive()) box(mv, Type.getType(paramTypes[j]));
-                        mv.visitInsn(AASTORE);
-                    }
-
-                    if (!methodData.callSuper) {
-                        if (returnType == void.class) {
-                            // goto the void return clause and invoke full override with parameters
-                            gotoReturnVoidWithParams(internalName, mv, arrayIdx, i);
-                            continue;
-                            
-                        } else {
-                            // goto the value return clause and invoke full override with parameters
-                            gotoReturnValueWithParams(internalName, returnType, isPrimitiveReturnType, mv, arrayIdx, i);
-                            continue;
-                        }
-                    }
-                    
-                    if (!methodData.isInterfaceMethod) {
-                        // invoke pre-hook with our new array as parameter
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor); 
-                        mv.visitVarInsn(ALOAD, arrayIdx);
-                        mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runBefore", preHookMethodDescriptor, true);
+                    boolean isPrimitiveReturnType = returnType.isPrimitive();
+    
+                    if (paramTypes.length > 0) {
+                        mv.visitLdcInsn(paramTypes.length);
         
-                        // store returned Object[] in same arrayIdx
+                        mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+                        int arrayIdx = paramSlotSize(paramTypes);
                         mv.visitVarInsn(ASTORE, arrayIdx);
-
-                        // unpack array back into parameters
-                        for (int j = 0; j < paramTypes.length; j++) {
-                            mv.visitVarInsn(ALOAD, arrayIdx);
-                            mv.visitLdcInsn(j);
-                            mv.visitInsn(AALOAD);
-
-                            if (paramTypes[j].isPrimitive()) {
-                                unbox(mv, Type.getType(paramTypes[j]));
-                            } else {
-                                mv.visitTypeInsn(CHECKCAST, Type.getInternalName(paramTypes[j]));
-                            }
-
-                            store(mv, paramTypes[j], paramSlot(paramTypes, j));
-                        }
-
-                        // --- invoke super/original method ---
-                        mv.visitVarInsn(ALOAD, 0);
-                        for (int j = 0; j < paramTypes.length; j++) {
-                            load(mv, paramTypes[j], paramSlot(paramTypes, j)); // load params
-                        }
-                    }
-                    
-                    if (returnType == void.class) {
-                        if (!methodData.isInterfaceMethod) {
-                            mv.visitMethodInsn(INVOKESPECIAL, superName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
-                            // call runAfter with null and discard its return
-
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
-                            mv.visitInsn(ACONST_NULL);
-                            mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runAfter", postHookMethodDescriptor, true);
-                            mv.visitInsn(POP);
-                            mv.visitInsn(RETURN);
-
-                        } else {
-                            
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
-                            mv.visitVarInsn(ALOAD, arrayIdx);
-                            mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runInterface", runInterfaceMethodDescriptor, true); // invoke with array as param
-                            mv.visitInsn(POP);
-                            mv.visitInsn(RETURN);
-                        }
-                        
-                    } else {
-                        if (!methodData.isInterfaceMethod) {
-                            // invoke super method
-                            mv.visitMethodInsn(INVOKESPECIAL, superName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
-                            if (isPrimitiveReturnType) box(mv, Type.getType(returnType));
-
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
-                            mv.visitInsn(SWAP);
-                            mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runAfter", postHookMethodDescriptor, true);
         
-                            if (isPrimitiveReturnType) unbox(mv, Type.getType(returnType));
-                            else mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
-                            mv.visitInsn(getReturnOpcode(returnType));
-
-                        } else {
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
-                            mv.visitVarInsn(ALOAD, arrayIdx);
-                            mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runInterface", runInterfaceMethodDescriptor, true);
+                        for (int j = 0; j < paramTypes.length; j++) {
+                            mv.visitVarInsn(ALOAD, arrayIdx); // load array reference
+                            mv.visitLdcInsn(j);                 // array index
         
-                            if (isPrimitiveReturnType) unbox(mv, Type.getType(returnType));
-                            else mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
-                            mv.visitInsn(getReturnOpcode(returnType));
-                        }
-                    }
-
-                } else {
-                    if (!methodData.callSuper) {
-                        if (returnType == void.class) {
-                            // goto the void return clause and invoke full override
-                            gotoReturnVoidNoParams(internalName, mv, i);
-                            continue;
-                            
-                        } else {
-                             // goto the value return clause and invoke full override
-                            gotoReturnValueNoParams(internalName, returnType, isPrimitiveReturnType, mv, i);
-                            continue;
-                           
-                        }
-                    }
-
-                    // invoke prehook with null
-                    if (!methodData.isInterfaceMethod) {
-                        mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor); 
-                        mv.visitInsn(ACONST_NULL);
-                        mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runBefore", preHookMethodDescriptor, true);
-                        // invoke super method
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitMethodInsn(INVOKESPECIAL, superName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
-                    }
-                    
-                    if (returnType == void.class) {
-                        // invoke posthook with null
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
-                        mv.visitInsn(ACONST_NULL);
-
-                        if (!methodData.isInterfaceMethod) mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runAfter", postHookMethodDescriptor, true);
-                        else mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runInterface", runInterfaceMethodDescriptor, true);
-
-                        mv.visitInsn(POP);
-                        mv.visitInsn(RETURN);
-                        
-                    } else {
-                        if (isPrimitiveReturnType && !methodData.isInterfaceMethod) box(mv, Type.getType(returnType));
-
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
-
-                        if (!methodData.isInterfaceMethod) {
-                            mv.visitInsn(SWAP);
-                            mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runAfter", postHookMethodDescriptor, true);
-
-                        } else {
-                            mv.visitInsn(ACONST_NULL);
-                            mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runInterface", runInterfaceMethodDescriptor, true);
+                            load(mv, paramTypes[j], paramSlot(paramTypes, j)); // store in array
+        
+                            if (paramTypes[j].isPrimitive()) box(mv, Type.getType(paramTypes[j]));
+                            mv.visitInsn(AASTORE);
                         }
     
-                        if (isPrimitiveReturnType) unbox(mv, Type.getType(returnType));
-                        else mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
-                        mv.visitInsn(getReturnOpcode(returnType));
+                        if (!methodData.callSuper) {
+                            if (returnType == void.class) {
+                                // goto the void return clause and invoke full override with parameters
+                                gotoReturnVoidWithParams(internalName, mv, arrayIdx, i);
+                                continue;
+                                
+                            } else {
+                                // goto the value return clause and invoke full override with parameters
+                                gotoReturnValueWithParams(internalName, returnType, isPrimitiveReturnType, mv, arrayIdx, i);
+                                continue;
+                            }
+                        }
+                        
+                        if (!methodData.isInterfaceMethod) {
+                            // invoke pre-hook with our new array as parameter
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor); 
+                            mv.visitVarInsn(ALOAD, arrayIdx);
+                            mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runBefore", preHookMethodDescriptor, true);
+            
+                            // store returned Object[] in same arrayIdx
+                            mv.visitVarInsn(ASTORE, arrayIdx);
+    
+                            // unpack array back into parameters
+                            for (int j = 0; j < paramTypes.length; j++) {
+                                mv.visitVarInsn(ALOAD, arrayIdx);
+                                mv.visitLdcInsn(j);
+                                mv.visitInsn(AALOAD);
+    
+                                if (paramTypes[j].isPrimitive()) {
+                                    unbox(mv, Type.getType(paramTypes[j]));
+                                } else {
+                                    mv.visitTypeInsn(CHECKCAST, Type.getInternalName(paramTypes[j]));
+                                }
+    
+                                store(mv, paramTypes[j], paramSlot(paramTypes, j));
+                            }
+    
+                            // --- invoke super/original method ---
+                            mv.visitVarInsn(ALOAD, 0);
+                            for (int j = 0; j < paramTypes.length; j++) {
+                                load(mv, paramTypes[j], paramSlot(paramTypes, j)); // load params
+                            }
+                        }
+                        
+                        if (returnType == void.class) {
+                            if (!methodData.isInterfaceMethod) {
+                                mv.visitMethodInsn(INVOKESPECIAL, methodData.declaringClassInternalName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
+                                // call runAfter with null and discard its return
+    
+                                mv.visitVarInsn(ALOAD, 0);
+                                mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
+                                mv.visitInsn(ACONST_NULL);
+                                mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runAfter", postHookMethodDescriptor, true);
+                                mv.visitInsn(POP);
+                                mv.visitInsn(RETURN);
+    
+                            } else {
+                                
+                                mv.visitVarInsn(ALOAD, 0);
+                                mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
+                                mv.visitVarInsn(ALOAD, arrayIdx);
+                                mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runInterface", runInterfaceMethodDescriptor, true); // invoke with array as param
+                                mv.visitInsn(POP);
+                                mv.visitInsn(RETURN);
+                            }
+                            
+                        } else {
+                            if (!methodData.isInterfaceMethod) {
+                                // invoke super method
+                                mv.visitMethodInsn(INVOKESPECIAL, methodData.declaringClassInternalName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
+                                if (isPrimitiveReturnType) box(mv, Type.getType(returnType));
+    
+                                mv.visitVarInsn(ALOAD, 0);
+                                mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
+                                mv.visitInsn(SWAP);
+                                mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runAfter", postHookMethodDescriptor, true);
+            
+                                if (isPrimitiveReturnType) unbox(mv, Type.getType(returnType));
+                                else mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
+                                mv.visitInsn(getReturnOpcode(returnType));
+    
+                            } else {
+                                mv.visitVarInsn(ALOAD, 0);
+                                mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
+                                mv.visitVarInsn(ALOAD, arrayIdx);
+                                mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runInterface", runInterfaceMethodDescriptor, true);
+            
+                                if (isPrimitiveReturnType) unbox(mv, Type.getType(returnType));
+                                else mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
+                                mv.visitInsn(getReturnOpcode(returnType));
+                            }
+                        }
+    
+                    } else {
+                        if (!methodData.callSuper) {
+                            if (returnType == void.class) {
+                                // goto the void return clause and invoke full override
+                                gotoReturnVoidNoParams(internalName, mv, i);
+                                continue;
+                                
+                            } else {
+                                 // goto the value return clause and invoke full override
+                                gotoReturnValueNoParams(internalName, returnType, isPrimitiveReturnType, mv, i);
+                                continue;
+                               
+                            }
+                        }
+    
+                        // invoke prehook with null
+                        if (!methodData.isInterfaceMethod) {
+                            mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor); 
+                            mv.visitInsn(ACONST_NULL);
+                            mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runBefore", preHookMethodDescriptor, true);
+                            // invoke super method
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitMethodInsn(INVOKESPECIAL, methodData.declaringClassInternalName, methodData.methodName, methodData.descriptor, methodData.isInterfaceMethod);
+                        }
+                        
+                        if (returnType == void.class) {
+                            // invoke posthook with null
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
+                            mv.visitInsn(ACONST_NULL);
+    
+                            if (!methodData.isInterfaceMethod) mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runAfter", postHookMethodDescriptor, true);
+                            else mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runInterface", runInterfaceMethodDescriptor, true);
+    
+                            mv.visitInsn(POP);
+                            mv.visitInsn(RETURN);
+                            
+                        } else {
+                            if (isPrimitiveReturnType && !methodData.isInterfaceMethod) box(mv, Type.getType(returnType));
+    
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitFieldInsn(GETFIELD, internalName, "rolfLectionHook" + i, methodHookDescriptor);
+    
+                            if (!methodData.isInterfaceMethod) {
+                                mv.visitInsn(SWAP);
+                                mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runAfter", postHookMethodDescriptor, true);
+    
+                            } else {
+                                mv.visitInsn(ACONST_NULL);
+                                mv.visitMethodInsn(INVOKEINTERFACE, methodHookInternalName, "runInterface", runInterfaceMethodDescriptor, true);
+                            }
+        
+                            if (isPrimitiveReturnType) unbox(mv, Type.getType(returnType));
+                            else mv.visitTypeInsn(CHECKCAST, Type.getInternalName(returnType));
+                            mv.visitInsn(getReturnOpcode(returnType));
+                        }
                     }
+                    mv.visitMaxs(0, 0);
+                    mv.visitEnd();
                 }
-                mv.visitMaxs(0, 0);
-                mv.visitEnd();
             }
+
+            if (methodDataPairs != null) {
+                for (int i = 0; i < methodDataPairs.length; i++) {
+                    MethodDataPair pair = methodDataPairs[i];
+
+                    MethodVisitor mv = cw.visitMethod(
+                        pair.customInterfaceMethod.access,
+                        pair.customInterfaceMethod.methodName,
+                        pair.customInterfaceMethod.descriptor,
+                        null,
+                        null
+                    );
+                    mv.visitCode();
+
+                    Class<?>[] paramTypes = pair.customInterfaceMethod.paramTypes;
+                    Class<?> returnType = pair.customInterfaceMethod.returnType;
+
+                    mv.visitVarInsn(ALOAD, 0);
+
+                    if (paramTypes.length > 0) {
+                        for (int j = 0; j < paramTypes.length; j++) {
+                            load(mv, paramTypes[j], paramSlot(paramTypes, j));
+                        }
+                    }
+                    
+                    mv.visitMethodInsn(INVOKESPECIAL, pair.targetMethodToInvoke.declaringClassInternalName, pair.targetMethodToInvoke.methodName, pair.targetMethodToInvoke.descriptor, false);
+
+                    if (returnType == void.class) mv.visitInsn(RETURN);
+                    else mv.visitInsn(getReturnOpcode(returnType));
+
+                    mv.visitMaxs(0, 0);
+                    mv.visitEnd();
+                }
+            }
+
             cw.visitEnd();
 
             byte[] classBytes = cw.toByteArray();

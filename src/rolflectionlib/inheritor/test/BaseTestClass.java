@@ -79,10 +79,10 @@ public class BaseTestClass {
     }
 
     public void noParamVoid1() {
-        
+        Inherit.print("noParamVoid1");
     }
 
     public void noParamVoid2() {
-        
+        Inherit.print("noParamVoid2");
     }
 }

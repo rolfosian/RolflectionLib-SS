@@ -9,6 +9,7 @@ import rolflectionlib.inheritor.MethodHook;
 import rolflectionlib.inheritor.SuperClassMethodHook;
 import rolflectionlib.inheritor.InterfaceMethodHook;
 import rolflectionlib.inheritor.MethodData;
+import rolflectionlib.inheritor.MethodDataPair;
 import rolflectionlib.inheritor.OverrideMethodHook;
 import rolflectionlib.util.RolfLectionUtil;
 
@@ -49,13 +50,25 @@ public class InheritTest {
                 new MethodData(RolfLectionUtil.getMethod("interfaceNoParamVoid", BaseTestInterface.class), true)
             };
 
+            MethodDataPair[] methodDataPair = new MethodDataPair[] {
+                new MethodDataPair(ExposingTestInterface.class,
+                    new MethodData(RolfLectionUtil.getMethod("exposeTest1", ExposingTestInterface.class), false),
+                    new MethodData(RolfLectionUtil.getMethod("oneParamReturnValue1", BaseTestClass.class), false)
+                ),
+                new MethodDataPair(ExposingTestInterface.class,
+                    new MethodData(RolfLectionUtil.getMethod("exposeTest2", ExposingTestInterface.class), false),
+                    new MethodData(RolfLectionUtil.getMethod("noParamVoid1", BaseTestClass.class), false)
+                )
+            };
+
             // generate subclass
             testClass = Inherit.extendClass(
                 BaseTestClass.class, // super class
-                new Class<?>[] {BaseTestInterface.class}, // interfaces to implement
+                new Class<?>[] {BaseTestInterface.class, ExposingTestInterface.class}, // interfaces to implement
                 BaseTestClass.class.getConstructor(new Class<?>[] {long.class, String.class, double.class, Map.class}), // super class constructor to use
                 "rolflectionlib/inheritor/test/BaseClassInheritor", // internal name of resulting subclass
-                methodData // MethodData array - this order must be the same as the order of the hooks passed to the constructor
+                methodData, // MethodData array - this order must be the same as the order of the hooks passed to the constructor
+                methodDataPair
                 // Global.getSettings().getModManager().getModSpec("rolflection_lib").getPath() + "/src/rolflectionlib/inheritor/test/InheritTestDump.class"
             );
 
@@ -384,5 +397,8 @@ public class InheritTest {
     
         Inherit.print(RolfLectionUtil.getMethodAndInvokeDirectly("interfaceNoParamReturnValue", test));
         RolfLectionUtil.getMethodAndInvokeDirectly("interfaceNoParamVoid", test);
+
+        Inherit.print(((ExposingTestInterface)test).exposeTest1("RETURNED EXPOSED"));
+        ((ExposingTestInterface)test).exposeTest2();
     }
 }
