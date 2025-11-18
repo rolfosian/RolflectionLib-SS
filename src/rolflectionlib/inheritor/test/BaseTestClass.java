@@ -3,18 +3,38 @@ package rolflectionlib.inheritor.test;
 import java.util.List;
 import java.util.Map;
 
+import rolflectionlib.inheritor.Inherit;
+
 public class BaseTestClass {
-    private int value;
+    private long l;
+    private double d;
     private Map<Object, Object> map;
     private String str;
 
-    public BaseTestClass(int initial, String str, Map<Object, Object> map) {
-        value = initial;
+    public BaseTestClass(long initialL, String str, double initialD, Map<Object, Object> map) {
+        this.l = initialL;
         this.map = map;
         this.str = str;
+        this.d = initialD;
     }
 
-    public String manyParams(String arg0, String arg1, String arg2, List<?> arg3, Map<?, ?> arg4, int arg5, long arg6, short arg7, double arg8) {
+    public String manyParams1(String arg0, long arg1, String arg2, List<?> arg3, Map<?, ?> arg4, int arg5, long arg6, short arg7, double arg8) {
+        Inherit.print(
+            arg0, arg1,
+            arg2, arg3,
+            arg4, arg5,
+            arg6, arg7, arg8
+        );
+        return arg0;
+    }
+
+    public String manyParams2(String arg0, long arg1, String arg2, List<?> arg3, Map<?, ?> arg4, int arg5, long arg6, short arg7, double arg8) {
+        Inherit.print(
+            arg0, arg1,
+            arg2, arg3,
+            arg4, arg5,
+            arg6, arg7, arg8
+        );
         return arg0;
     }
 
@@ -35,11 +55,11 @@ public class BaseTestClass {
     }
 
     public int twoParamReturnValue1(int x, int y) {
-        return value + x + y;
+        return x + y;
     }
 
     public int twoParamReturnValue2(int x, int y) {
-        return value + x + y;
+        return x + y;
     }
     
     public void twoParamVoid1(String key, Object value) {

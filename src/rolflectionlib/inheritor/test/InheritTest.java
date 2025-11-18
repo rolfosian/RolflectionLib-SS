@@ -2,13 +2,14 @@ package rolflectionlib.inheritor.test;
 
 import java.util.*;
 
+import com.fs.starfarer.api.Global;
+
 import rolflectionlib.inheritor.Inherit;
+import rolflectionlib.inheritor.MethodHook;
 import rolflectionlib.inheritor.SuperClassMethodHook;
 import rolflectionlib.inheritor.InterfaceMethodHook;
 import rolflectionlib.inheritor.MethodData;
-import rolflectionlib.inheritor.MethodHook;
 import rolflectionlib.inheritor.OverrideMethodHook;
-
 import rolflectionlib.util.RolfLectionUtil;
 
 public class InheritTest {
@@ -19,7 +20,8 @@ public class InheritTest {
         try {
             // this order must be the same as the order of the hooks passed to the constructor
             MethodData[] methodData = new MethodData[] {
-                new MethodData(RolfLectionUtil.getMethod("manyParams", BaseTestClass.class), true),
+                new MethodData(RolfLectionUtil.getMethod("manyParams1", BaseTestClass.class), true),
+                new MethodData(RolfLectionUtil.getMethod("manyParams2", BaseTestClass.class), false),
 
                 new MethodData(RolfLectionUtil.getMethod("oneParamReturnValue1", BaseTestClass.class), true),
                 new MethodData(RolfLectionUtil.getMethod("oneParamReturnValue2", BaseTestClass.class), false),
@@ -51,9 +53,10 @@ public class InheritTest {
             testClass = Inherit.extendClass(
                 BaseTestClass.class, // super class
                 new Class<?>[] {BaseTestInterface.class}, // interfaces to implement
-                BaseTestClass.class.getConstructor(new Class<?>[] {int.class, String.class, Map.class}), // super class constructor to use
+                BaseTestClass.class.getConstructor(new Class<?>[] {long.class, String.class, double.class, Map.class}), // super class constructor to use
                 "rolflectionlib/inheritor/test/BaseClassInheritor", // internal name of resulting subclass
                 methodData // MethodData array - this order must be the same as the order of the hooks passed to the constructor
+                // Global.getSettings().getModManager().getModSpec("rolflection_lib").getPath() + "/src/rolflectionlib/inheritor/test/InheritTestDump.class"
             );
 
             testCtor = testClass.getConstructors()[0];
@@ -65,12 +68,20 @@ public class InheritTest {
 
     private final BaseTestInterface instance;
 
-    public InheritTest(int returnValue, String arg1, Map<String, Object> arg2) {
+    public InheritTest(long initialL, String arg1, double initialD, Map<String, Object> arg2) {
         // Important note: hooks must be in the same order as MethodData was passed when generating the subclass
-        MethodHook manyParamsHook = new SuperClassMethodHook() {
+        MethodHook manyParams1 = new SuperClassMethodHook() {
 
-            @Override
+            @Override @SuppressWarnings("unchecked")
             public Object[] runBefore(Object... methodParams) {
+                Inherit.print(
+                    methodParams[0], methodParams[1],
+                    methodParams[2], methodParams[3],
+                    methodParams[4], methodParams[5],
+                    methodParams[6], methodParams[7],
+                    methodParams[8]
+                );
+                ((Map<String, String>)methodParams[4]).put("HELLO", "WORLD");
                 methodParams[0] = "has no games"; // correct original misinfo param to the truth
                 return methodParams;
             }
@@ -78,6 +89,22 @@ public class InheritTest {
             @Override
             public Object runAfter(Object returnValue) {
                 return "ps3 " + (String) returnValue;
+            }
+            
+        };
+
+        MethodHook manyParams2 = new OverrideMethodHook() {
+
+            @Override
+            public Object runFullOverride(Object... params) {
+                Inherit.print(
+                    params[0], params[1],
+                    params[2], params[3],
+                    params[4], params[5],
+                    params[6], params[7],
+                    params[8]
+                );
+                return params[2] + " ASDFGHKLM";
             }
             
         };
@@ -246,9 +273,10 @@ public class InheritTest {
 
         // instantiate subclass with hooks in correct order
         Object[] ctorParams = new Object[] {
-            returnValue, arg1, arg2, // super params
+            initialL, arg1, initialD, arg2, // super params
             
-            manyParamsHook,
+            manyParams1,
+            manyParams2,
 
             oneParamReturnValue1,
             oneParamReturnValue2,
@@ -287,14 +315,14 @@ public class InheritTest {
     }
 
     public static void test() {
-        BaseTestInterface test = new InheritTest(5, "STRING", new HashMap<>()).getInstance();
+        BaseTestInterface test = new InheritTest(5L, "STRING", 5D, new HashMap<>()).getInstance();
         
         Inherit.print(RolfLectionUtil.getMethodAndInvokeDirectly(
-            "manyParams", 
+            "manyParams1", 
             test,
 
             "has games", // misinfo param
-            "foo",
+            420L,
             "bar",
             new ArrayList<>(),
             new HashMap<>(),
@@ -302,6 +330,21 @@ public class InheritTest {
             6L,
             (short) 4,
             90D
+        ));
+
+        Inherit.print(RolfLectionUtil.getMethodAndInvokeDirectly(
+            "manyParams2", 
+            test,
+
+            "asdfghjkl;",
+            69L,
+            "foo",
+            new ArrayList<>(),
+            new HashMap<>(),
+            10,
+            8L,
+            (short) 12,
+            20D
         ));
 
         Inherit.print(RolfLectionUtil.getMethodAndInvokeDirectly("oneParamReturnValue1", test, "first"));
