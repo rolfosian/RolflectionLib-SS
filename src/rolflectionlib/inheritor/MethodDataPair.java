@@ -10,7 +10,6 @@ import org.objectweb.asm.Type;
  * @param methodToInvoke The super method to invoke
  */
 public class MethodDataPair {
-    public final String customInterfaceDescriptor;
     public final MethodData customInterfaceMethod;
     public final MethodData targetMethodToInvoke;
 
@@ -18,7 +17,6 @@ public class MethodDataPair {
         if (!signatureCheck(customInterfaceMethodData, targetMethodToInvoke))
             throw new IllegalArgumentException("Method signatures must match");
 
-        this.customInterfaceDescriptor = Type.getDescriptor(customInterface);
         this.customInterfaceMethod = customInterfaceMethodData;
         this.targetMethodToInvoke = targetMethodToInvoke;
     }
