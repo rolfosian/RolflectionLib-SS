@@ -32,7 +32,7 @@ public class Inherit implements Opcodes {
     /** Extends a given super class and exposes methods denoted by parameter array of {@link MethodDataPair} objects.
      * 
      * @param superClass    Super class to extend
-     * @param interfacesToImplement    Any interfaces to implement, can be null
+     * @param interfacesToImplement    Interfaces to implement
      * @param superClassConstructor    Which super class constructor to use
      * @param inheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
      * @param methodDataPairs   Array of {@link MethodDataPair} objects to denote which super methods to invoke directly internally by a custom interface thereby eliminating reflection overhead. Said interface must be included in the <b>interfacesToImplement</b> parameter.
@@ -51,7 +51,7 @@ public class Inherit implements Opcodes {
     /** Extends a given super class and hooks methods denoted by parameter array of {@link MethodData} objects.
      * 
      * @param superClass    Super class to extend
-     * @param interfacesToImplement    Any interfaces to implement, can be null
+     * @param interfacesToImplement    interfaces to implement
      * @param superClassConstructor    Which super class constructor to use
      * @param inheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
      * @param methodDataArray array of {@link MethodData} objects to denote which methods to hook.
