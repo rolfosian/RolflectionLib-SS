@@ -3,7 +3,6 @@
 ## RolflectionLib - A java library for modding with reflection in Starsector
 
 ### Features
-- No custom classloaders required!
 - [Dynamic runtime subclass generator](./src/rolflectionlib/inheritor/Inherit.java)
   - For subclassing obfuscated classes and interfaces and hooking their methods at runtime. Works with illegal class and method names to help maintain platform and version agnosticism.
   - [Examples](./src/rolflectionlib/inheritor/examples/)
