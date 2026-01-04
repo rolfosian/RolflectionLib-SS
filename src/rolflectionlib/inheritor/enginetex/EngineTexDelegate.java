@@ -13,6 +13,7 @@ public abstract class EngineTexDelegate {
 
     protected EngineTexInterface texWrapper = null;
     protected int[][] engineTexOrder;
+    protected int enginesTotal;
 
     public abstract void onTexBind(int currentEngine, boolean isRolloverEngine);
 
@@ -29,6 +30,8 @@ public abstract class EngineTexDelegate {
     }
 
     protected void setEngines(List<Object> engines) {
+        enginesTotal = engines.size();
+        
         for (Object eng : engines) {
             ShipEngineAPI engine = (ShipEngineAPI) eng;
             this.engines.add(engine);
