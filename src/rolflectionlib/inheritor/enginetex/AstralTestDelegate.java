@@ -220,8 +220,8 @@ public class AstralTestDelegate extends EngineTexDelegate {
     }
 
     private boolean isLast() {
-        if (currentTexIdsIdx == engines.size() - 1) return true;
-        for (int i = currentTexIdsIdx + 1; i < engines.size(); i++)
+        if (currentTexIdsIdx == enginesTotal - 1) return true;
+        for (int i = currentTexIdsIdx + 1; i < enginesTotal; i++)
             if (engines.get(i).isActive()) return false;
         return true;
     }
@@ -232,7 +232,7 @@ public class AstralTestDelegate extends EngineTexDelegate {
 
     // this can be optimized by indexing a dataclass with color and tex order step pairs but i cant be bothered doign that for this test
     private void christmastralLights(int current) {
-        for (int i = 0; i < engineSlots.size(); i++) {
+        for (int i = 0; i < enginesTotal; i++) {
             if (i != current) {
                 EngineSlotAPI engine = engineSlots.get(i);
                 engine.setColor(Color.GREEN);
