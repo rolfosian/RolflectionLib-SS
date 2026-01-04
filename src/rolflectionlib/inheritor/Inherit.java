@@ -1,7 +1,5 @@
 package rolflectionlib.inheritor;
 
-import java.util.*;
-
 import org.apache.log4j.Logger;
 import org.objectweb.asm.*;
 
@@ -20,6 +18,18 @@ public class Inherit implements Opcodes {
         }
         logger.info(sb.toString());
     }
+
+    public static final class InheritClassLoader extends ClassLoader {
+
+        public InheritClassLoader() {
+            super(Inherit.class.getClassLoader());
+        }
+
+        public Class<?> define(byte[] b, String name) {
+            return defineClass(name, b, 0, b.length);
+        }
+    }
+    public static final InheritClassLoader inheritCl = new InheritClassLoader();
 
     private static final String methodHookInternalName = Type.getInternalName(MethodHook.class);
     private static final String methodHookDescriptor = Type.getDescriptor(MethodHook.class);
@@ -410,13 +420,7 @@ public class Inherit implements Opcodes {
             byte[] classBytes = cw.toByteArray();
             if (binaryDumpFilePath != null) dumpClass(classBytes, binaryDumpFilePath);
 
-            String classBinaryName = internalName.replace('/', '.');
-            return (Class<?>) RolfLectionUtil.getMethodDeclaredAndInvokeDirectly("define", new ClassLoader(Inherit.class.getClassLoader()) {
-                Class<?> define(byte[] b) {
-                    return defineClass(classBinaryName, b, 0, b.length);
-                }
-            },
-            classBytes);
+            return inheritCl.define(classBytes, internalName.replace('/', '.'));
 
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -480,7 +484,7 @@ public class Inherit implements Opcodes {
         mv.visitEnd();
     }
 
-        /** Implements a given array of interfaces and hooks their methods denoted by an array of {@link MethodData} objects.
+    /** Implements a given array of interfaces and hooks their methods denoted by an array of {@link MethodData} objects.
      * 
      * @param internalInheritorName    Internal name of resulting class e.g. <code>path/to/package/MyInheritorClass</code>. Cannot be the same name as an existing class that has been loaded by the default Classloader
      * @param interfacesToImplement    Interfaces to implement
@@ -676,13 +680,7 @@ public class Inherit implements Opcodes {
             byte[] classBytes = cw.toByteArray();
             if (binaryDumpFilePath != null) dumpClass(classBytes, binaryDumpFilePath);
 
-            String classBinaryName = internalName.replace('/', '.');
-            return (Class<?>) RolfLectionUtil.getMethodDeclaredAndInvokeDirectly("define", new ClassLoader(Inherit.class.getClassLoader()) {
-                Class<?> define(byte[] b) {
-                    return defineClass(classBinaryName, b, 0, b.length);
-                }
-            },
-            classBytes);
+            return inheritCl.define(classBytes, internalName.replace('/', '.'));
 
         } catch (Throwable e) {
             throw new RuntimeException(e);

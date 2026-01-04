@@ -2,6 +2,7 @@ package rolflectionlib.inheritor.enginetex;
 
 import org.objectweb.asm.*;
 
+import rolflectionlib.inheritor.Inherit;
 import rolflectionlib.util.RolfLectionUtil;
 
 public class EngineTexASM implements Opcodes {
@@ -488,13 +489,6 @@ public class EngineTexASM implements Opcodes {
         getDelegate.visitEnd();
 
         cw.visitEnd();
-        byte[] bytes = cw.toByteArray();
-
-        return (Class<?>) RolfLectionUtil.getMethodDeclaredAndInvokeDirectly("define", new ClassLoader(parent) {
-            Class<?> define(byte[] b) {
-                return defineClass("com.fs.graphics.EngineTex", b, 0, b.length);
-            }
-        },
-        bytes);
+        return Inherit.inheritCl.define(cw.toByteArray(), "com.fs.graphics.EngineTex");
     }
 }
