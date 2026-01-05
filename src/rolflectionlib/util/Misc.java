@@ -130,7 +130,6 @@ public class Misc {
     public static Object createConfirmDialog(String text, String confirmText, String cancelText, float width, float height, DialogDismissedListener dialogListener, Object screenPanel) {
         return RolfLectionUtil.instantiateClass(
             ClassRefs.confirmDialogConstructor,
-            ClassRefs.confirmDialogClass,
             width,
             height,
             screenPanel,
