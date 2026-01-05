@@ -1192,6 +1192,19 @@ public class RolfLectionUtil {
         }
     }
 
+    public static Object getFieldByInterface(Class<?> interfc, Class<?> cls) {
+        try {
+            for (Object field : cls.getDeclaredFields()) {
+                if (interfc.isAssignableFrom(((Class<?>)getFieldTypeHandle.invoke(field)))) {
+                    return field;
+                }
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
     public static int getMethodModifiers(Object method) {
         try {
             return (int) getModifiersHandle.invoke(method);
