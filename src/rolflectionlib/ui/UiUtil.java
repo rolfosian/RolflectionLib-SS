@@ -7,10 +7,12 @@ import org.objectweb.asm.*;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
 import com.fs.starfarer.campaign.CampaignState;
+import com.fs.starfarer.campaign.command.AdminPickerDialog;
 import com.fs.starfarer.campaign.comms.v2.EventsPanel;
 import com.fs.starfarer.ui.impl.StandardTooltipV2;
 import com.fs.graphics.util.Fader;
 import com.fs.starfarer.api.ui.ButtonAPI;
+import com.fs.starfarer.api.ui.LabelAPI;
 
 import rolflectionlib.inheritor.Inherit;
 import rolflectionlib.util.RolfLectionUtil;
@@ -49,9 +51,17 @@ public class UiUtil implements Opcodes {
 
         public UIPanelAPI getParent(Object uiComponent);
         public List<UIComponentAPI> getChildrenNonCopy(UIComponentAPI parent); // custom method with instanceof check uiPanelClass else return null
-        public List<UIComponentAPI> getChildrenNonCopy(Object uiPanel);
-        public List<UIComponentAPI> getChildrenCopy(Object uiPanel);
+        public List<UIComponentAPI> getChildrenNonCopy(UIPanelAPI uiPanel); // direct cast
+        public List<UIComponentAPI> getChildrenCopy(UIPanelAPI uiPanel);
         public void clearChildren(Object uiPanel);
+
+        public void confirmDialogDismiss(Object confirmDialog, int confirmOrCancel);
+        public ButtonAPI confirmDialogGetButton(Object confirmDialog, int button);
+        public LabelAPI confirmDialogGetLabel(Object confirmDialog);
+        public boolean isNoiseOnConfirmDismiss(Object confirmDialog);
+        public void confirmDialogShow(Object confirmDialog, float durationIn, float durationOut);
+        public UIPanelAPI confirmDialogGetInnerPanel(Object confirmDialog);
+        public Object confirmDialogGetHolo(Object confirmDialog);
     }
 
     private static Class<?>[] implementUiUtilInterface() {
@@ -62,6 +72,8 @@ public class UiUtil implements Opcodes {
         Class<?> interactionDialogClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("encounterDialog", CampaignState.class));
         Class<?> buttonClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByInterface(ButtonAPI.class, EventsPanel.class));
         Class<?> actionListenerInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListener", buttonClass));
+        Class<?> confirmDialogClass = AdminPickerDialog.class.getSuperclass();
+        Class<?> dialogDismissedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getDelegate", confirmDialogClass));
 
         String coreClassInternalName = Type.getInternalName(coreClass);
         String uiPanelInternalName = Type.getInternalName(uiPanelClass);
@@ -70,6 +82,7 @@ public class UiUtil implements Opcodes {
         String buttonClassInternalName = Type.getInternalName(buttonClass);
         String actionListenerInterfaceInternalName = Type.getInternalName(actionListenerInterface);
         String campaignStateInternalName = Type.getInternalName(CampaignState.class);
+        String confirmDialogClassInternalName = Type.getInternalName(confirmDialogClass);
 
         String coreClassDesc = Type.getDescriptor(coreClass);
         String uiPanelClassDesc = Type.getDescriptor(uiPanelClass);
@@ -79,6 +92,7 @@ public class UiUtil implements Opcodes {
         String buttonClassDesc = Type.getDescriptor(buttonClass);
         String actionListenerInterfaceDesc = Type.getDescriptor(actionListenerInterface);
         String tooltipDesc = Type.getDescriptor(toolTipClass);
+        String labelAPIDesc = Type.getDescriptor(LabelAPI.class);
 
         String superName = Type.getType(Object.class).getInternalName();
         String interfaceName = Type.getType(UiUtilInterface.class).getInternalName();
@@ -420,8 +434,6 @@ public class UiUtil implements Opcodes {
         //     ((uiComponentClass)uiComponent).setSlideData(xOffset, yOffset, durationIn, durationOut);
         // }
         {
-            Object setSlideDataMethod = RolfLectionUtil.getMethod("setSlideData", uiComponentClass, 4);
-            String setSlideDataDesc = Type.getMethodDescriptor(setSlideDataMethod);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "setSlideData",
@@ -442,7 +454,7 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 uiComponentInternalName,
                 "setSlideData",
-                setSlideDataDesc,
+                "(FFFF)V",
                 false
             );
 
@@ -456,8 +468,6 @@ public class UiUtil implements Opcodes {
         //     ((uiComponentClass)uiComponent).slideIn();
         // }
         {
-            Object slideInMethod = RolfLectionUtil.getMethod("slideIn", uiComponentClass, 0);
-            String slideInDesc = Type.getMethodDescriptor(slideInMethod);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "slideIn",
@@ -474,7 +484,7 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 uiComponentInternalName,
                 "slideIn",
-                slideInDesc,
+                "()V",
                 false
             );
 
@@ -488,8 +498,6 @@ public class UiUtil implements Opcodes {
         //     ((uiComponentClass)uiComponent).slideOut();
         // }
         {
-            Object slideOutMethod = RolfLectionUtil.getMethod("slideOut", uiComponentClass, 0);
-            String slideOutDesc = Type.getMethodDescriptor(slideOutMethod);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "slideOut",
@@ -506,7 +514,7 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 uiComponentInternalName,
                 "slideOut",
-                slideOutDesc,
+                "()V",
                 false
             );
 
@@ -520,8 +528,6 @@ public class UiUtil implements Opcodes {
         //     ((uiComponentClass)uiComponent).forceSlideIn();
         // }
         {
-            Object forceSlideInMethod = RolfLectionUtil.getMethod("forceSlideIn", uiComponentClass, 0);
-            String forceSlideInDesc = Type.getMethodDescriptor(forceSlideInMethod);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "forceSlideIn",
@@ -538,7 +544,7 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 uiComponentInternalName,
                 "forceSlideIn",
-                forceSlideInDesc,
+                "()V",
                 false
             );
 
@@ -883,14 +889,14 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public List<UIComponentAPI> getChildrenNonCopy(Object uiPanel) {
+        // public List<UIComponentAPI> getChildrenNonCopy(UIPanelAPI uiPanel) {
         //     return ((uiPanelClass)uiPanel).getChildrenNonCopy();
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "getChildrenNonCopy",
-                "(Ljava/lang/Object;)Ljava/util/List;",
+                "(" + uiPanelAPIDesc + ")Ljava/util/List;",
                 null,
                 null
             );
@@ -942,12 +948,260 @@ public class UiUtil implements Opcodes {
             mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
+
+        // public void clearChildren(Object uiPanel) {
+        //     return ((uiPanelClass)uiPanel).clearChildren();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "clearChildren",
+                "(Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiPanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiPanelInternalName,
+                "clearChildren",
+                "()V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void confirmDialogDismiss(Object confirmDialog, int confirmOrCancel) {
+        //     ((confirmDialogClass)confirmDialog).dismiss(confirmOrCancel);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "confirmDialogDismiss",
+                "(Ljava/lang/Object;I)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+
+            mv.visitVarInsn(ILOAD, 2);
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                confirmDialogClassInternalName,
+                "dismiss",
+                "(I)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public ButtonAPI confirmDialogGetButton(Object confirmDialog, int button) {
+        //     return ((confirmDialogClass)confirmDialog).getButton(button);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "confirmDialogGetButton",
+                "(Ljava/lang/Object;I)" + buttonAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                confirmDialogClassInternalName,
+                "getButton",
+                "(I)" + buttonClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public LabelAPI confirmDialogGetLabel(Object confirmDialog) {
+        //     return ((confirmDialogClass)confirmDialog).getLabel();
+        // }
+        {
+            String labelDesc = Type.getDescriptor(RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getLabel", confirmDialogClass)));
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "confirmDialogGetLabel",
+                "(Ljava/lang/Object;)" + labelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                confirmDialogClassInternalName,
+                "getLabel",
+                "()" + labelDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public boolean isNoiseOnConfirmDismiss(Object confirmDialog) {
+        //     return ((confirmDialogClass)confirmDialog).isNoiseOnDismiss();
+        // }
+        {
+            String isNoiseOnDismissDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("isNoiseOnDismiss", confirmDialogClass));
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "isNoiseOnConfirmDismiss",
+                "(Ljava/lang/Object;)Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                confirmDialogClassInternalName,
+                "isNoiseOnDismiss",
+                isNoiseOnDismissDesc,
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void confirmDialogShow(Object confirmDialog, float durationIn, float durationOut) {
+        //     ((confirmDialogClass)confirmDialog).show(durationIn, durationOut);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "confirmDialogShow",
+                "(Ljava/lang/Object;FF)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                confirmDialogClassInternalName,
+                "show",
+                "(FF)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI confirmDialogGetInnerPanel(Object confirmDialog) {
+        //     return ((confirmDialogClass)confirmDialog).getInnerPanel();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "confirmDialogGetInnerPanel",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                confirmDialogClassInternalName,
+                "getInnerPanel",
+                "()" + uiPanelClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object confirmDialogGetHolo(Object confirmDialog) {
+        //     return ((confirmDialogClass)confirmDialog).getHolo();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "confirmDialogGetHolo",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                confirmDialogClassInternalName,
+                "getHolo",
+                "()" + Type.getDescriptor(RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getHolo", confirmDialogClass))),
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
         cw.visitEnd();
 
         return new Class<?>[] {
             Inherit.inheritCl.define(cw.toByteArray(), "rolflectionlib.util.UiUtilInterface"),
             uiPanelClass,
-            uiComponentClass
+            uiComponentClass,
+            // actionListenerInterface,
+            // dialogDismissedInterface
         };
     }
 
