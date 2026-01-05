@@ -191,12 +191,8 @@ public class EngineTex {
         }
     }
 
-    private static EngineTexInterface instantiateEngineTex(int[] intTexIds, List<Object> engines) {
-        try {
-            return (EngineTexInterface) engineTexClassCtorOne.invoke(GL11.GL_TEXTURE_2D, 0, intTexIds, engines);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+    private static EngineTexInterface instantiateEngineTex(int[] intTexIds, List<Object> engines) throws Throwable {
+        return (EngineTexInterface) engineTexClassCtorOne.invoke(GL11.GL_TEXTURE_2D, 0, intTexIds, engines);
     }
 
     public static EngineTexInterface setEngineTextures(ShipAPI shipApi, int[] textures) {
@@ -218,12 +214,9 @@ public class EngineTex {
         }
     }
 
-    private static EngineTexInterface instantiateEngineTex(int[] intTexIds, List<Object> engines, EngineTexDelegate delegate) {
-        try {
-            return (EngineTexInterface) engineTexClassCtorThree.invoke(GL11.GL_TEXTURE_2D, 0, intTexIds, engines, delegate);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+    private static EngineTexInterface instantiateEngineTex(int[] intTexIds, List<Object> engines, EngineTexDelegate delegate) throws Throwable {
+        return (EngineTexInterface) engineTexClassCtorThree.invoke(GL11.GL_TEXTURE_2D, 0, intTexIds, engines, delegate);
+
     }
 
     public static EngineTexInterface setEngineTextures(ShipAPI shipApi, int[] textures, EngineTexDelegate delegate) {
@@ -249,12 +242,8 @@ public class EngineTex {
         }
     }
 
-    private static EngineTexInterface instantiateEngineTex(String[] stringTexIds, List<Object> engines) {
-        try {
-            return (EngineTexInterface) engineTexClassCtorTwo.invoke(GL11.GL_TEXTURE_2D, 0, stringTexIds, engines);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+    private static EngineTexInterface instantiateEngineTex(String[] stringTexIds, List<Object> engines) throws Throwable {
+        return (EngineTexInterface) engineTexClassCtorTwo.invoke(GL11.GL_TEXTURE_2D, 0, stringTexIds, engines);
     }
 
     public static EngineTexInterface setEngineTextures(ShipAPI shipApi, String[] textures) {
@@ -278,12 +267,8 @@ public class EngineTex {
 
     }
 
-    private static EngineTexInterface instantiateEngineTex(String[] stringTexIds, List<Object> engines, EngineTexDelegate delegate) {
-        try {
-            return (EngineTexInterface) engineTexClassCtorFour.invoke(GL11.GL_TEXTURE_2D, 0, stringTexIds, engines, delegate);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+    private static EngineTexInterface instantiateEngineTex(String[] stringTexIds, List<Object> engines, EngineTexDelegate delegate) throws Throwable {
+        return (EngineTexInterface) engineTexClassCtorFour.invoke(GL11.GL_TEXTURE_2D, 0, stringTexIds, engines, delegate);
     }
 
     public static EngineTexInterface setEngineTextures(ShipAPI shipApi, String[] textures, EngineTexDelegate delegate) {
