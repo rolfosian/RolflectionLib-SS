@@ -11,6 +11,8 @@ import com.fs.starfarer.campaign.command.AdminPickerDialog;
 import com.fs.starfarer.campaign.comms.v2.EventsPanel;
 import com.fs.starfarer.ui.impl.StandardTooltipV2;
 import com.fs.graphics.util.Fader;
+import com.fs.starfarer.api.campaign.CampaignUIAPI;
+import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 
@@ -64,6 +66,7 @@ public class UiUtil implements Opcodes {
         public Object confirmDialogGetHolo(Object confirmDialog);
     }
 
+    // With this we can implement the above interface and generate a class at runtime to call obfuscated class methods platform agnostically without reflection overhead
     private static Class<?>[] implementUiUtilInterface() {
         Class<?> coreClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCore", CampaignState.class));
         Class<?> uiPanelClass = coreClass.getSuperclass();
@@ -1220,5 +1223,9 @@ public class UiUtil implements Opcodes {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Object getCore(CampaignUIAPI campaignUI, InteractionDialogAPI interactionDialog) {
+        return interactionDialog == null ? utils.campaignUIgetCore(campaignUI) : utils.interactionDialogGetCore(interactionDialog);
     }
 }
