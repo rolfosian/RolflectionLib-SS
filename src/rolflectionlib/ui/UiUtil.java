@@ -57,7 +57,7 @@ public class UiUtil implements Opcodes {
         public List<UIComponentAPI> getChildrenCopy(UIPanelAPI uiPanel);
         public void clearChildren(Object uiPanel);
 
-        public void confirmDialogDismiss(Object confirmDialog, int confirmOrCancel);
+        public void confirmDialogDismiss(Object confirmDialog, int button);
         public ButtonAPI confirmDialogGetButton(Object confirmDialog, int button);
         public LabelAPI confirmDialogGetLabel(Object confirmDialog);
         public boolean isNoiseOnConfirmDismiss(Object confirmDialog);
