@@ -1228,4 +1228,6 @@ public class UiUtil implements Opcodes {
     public static Object getCore(CampaignUIAPI campaignUI, InteractionDialogAPI interactionDialog) {
         return interactionDialog == null ? utils.campaignUIgetCore(campaignUI) : utils.interactionDialogGetCore(interactionDialog);
     }
+
+    public static void init() {} // call to load this class and generate the interface class in onApplicationLoad
 }
