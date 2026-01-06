@@ -10,6 +10,6 @@ public class RolfLectionLibCombatPlugin extends BaseEveryFrameCombatPlugin {
     
     @Override
     public void advance(float arg0, List<InputEventAPI> arg1) {
-        frame++;
+        frame = (frame + 1) % 10;
     }
 }
