@@ -12,8 +12,15 @@ public abstract class EngineTexDelegate {
     protected Map<EngineSlotAPI, ContrailEmitter> contrailMap = new HashMap<>();
 
     protected EngineTexInterface texWrapper = null;
+
     protected int[][] engineTexOrder;
     protected int enginesTotal;
+
+    private final EngineTexType type;
+
+    public EngineTexDelegate(EngineTexType type) {
+        this.type = type;
+    }
 
     public abstract void onTexBind(int currentEngine, boolean isRolloverEngine);
 
@@ -27,6 +34,10 @@ public abstract class EngineTexDelegate {
 
     public EngineTexInterface getTexWrapper() {
         return this.texWrapper;
+    }
+
+    public final EngineTexType getType() {
+        return this.type;
     }
 
     protected void setEngines(List<Object> engines) {
@@ -52,5 +63,13 @@ public abstract class EngineTexDelegate {
     public int[] getTexIds(int idx) {
         if (this.engineTexOrder == null) return null;
         return this.engineTexOrder[idx];
+    }
+
+    public static enum EngineTexType {
+        GLOW_AND_SMOOTH_GLOW,
+        GLOW,
+        SMOOTH_GLOW,
+        FLAME,
+        ALL
     }
 }

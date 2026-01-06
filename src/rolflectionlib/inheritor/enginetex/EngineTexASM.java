@@ -157,136 +157,6 @@ public class EngineTexASM implements Opcodes {
         mv.visitMaxs(0, 0);
         mv.visitEnd();
 
-        // Constructor: public EngineTex(int arg0, int arg1, int[] texIds, List<engineClass> engines, EngineTexDelegate delegate)
-        MethodVisitor mv3 = cw.visitMethod(
-                ACC_PUBLIC,
-                "<init>",
-                "(II[ILjava/util/List;Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;)V",
-                "(II[ILjava/util/List<" + engineDesc + ">;Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;)V",
-                null
-        );
-        mv3.visitCode();
-        // super(arg0, arg1)
-        mv3.visitVarInsn(ALOAD, 0);
-        mv3.visitVarInsn(ILOAD, 1);
-        mv3.visitVarInsn(ILOAD, 2);
-        mv3.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "(II)V", false);
-
-        // this.enginesTotal = texIds.length
-        mv3.visitVarInsn(ALOAD, 0);
-        mv3.visitVarInsn(ALOAD, 3); // Load texIds array
-        mv3.visitInsn(ARRAYLENGTH); // Get array length
-        mv3.visitFieldInsn(PUTFIELD, internalName, "enginesTotal", "I");
-
-        // this.texIds = texIds (direct assignment)
-        mv3.visitVarInsn(ALOAD, 0);
-        mv3.visitVarInsn(ALOAD, 3); // Load texIds array parameter
-        mv3.visitFieldInsn(PUTFIELD, internalName, "texIds", "[I");
-
-        // this.engineIndex = 0;
-        mv3.visitVarInsn(ALOAD, 0);
-        mv3.visitInsn(ICONST_0);
-        mv3.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I");
-
-        // this.lastUsedFrame = -1
-        mv3.visitVarInsn(ALOAD, 0);
-        mv3.visitInsn(ICONST_M1); // Push -1
-        mv3.visitFieldInsn(PUTFIELD, internalName, "lastUsedFrame", "I");
-
-        // this.engines = engines
-        mv3.visitVarInsn(ALOAD, 0);
-        mv3.visitVarInsn(ALOAD, 4);
-        mv3.visitFieldInsn(PUTFIELD, internalName, "engines", "Ljava/util/List;");
-
-        // this.engineTexDelegate = delegate
-        mv3.visitVarInsn(ALOAD, 0);
-        mv3.visitVarInsn(ALOAD, 5); // Load delegate parameter
-        mv3.visitFieldInsn(PUTFIELD, internalName, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;");
-        mv3.visitInsn(RETURN);
-        mv3.visitMaxs(0, 0);
-        mv3.visitEnd();
-
-        // Constructor: public EngineTex(int arg0, int arg1, String[] spriteIds, List<engineClass> engines, EngineTexDelegate delegate)
-        MethodVisitor mv4 = cw.visitMethod(
-                ACC_PUBLIC,
-                "<init>",
-                "(II[Ljava/lang/String;Ljava/util/List;Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;)V",
-                "(II[Ljava/lang/String;Ljava/util/List<" + engineDesc + ">;Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;)V",
-                null
-        );
-        mv4.visitCode();
-        // super(arg0, arg1)
-        mv4.visitVarInsn(ALOAD, 0);
-        mv4.visitVarInsn(ILOAD, 1);
-        mv4.visitVarInsn(ILOAD, 2);
-        mv4.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "(II)V", false);
-
-        // this.enginesTotal = spriteIds.length
-        mv4.visitVarInsn(ALOAD, 0);
-        mv4.visitVarInsn(ALOAD, 3); // Load spriteIds array
-        mv4.visitInsn(ARRAYLENGTH); // Get array length
-        mv4.visitFieldInsn(PUTFIELD, internalName, "enginesTotal", "I");
-
-        // this.texIds = new int[spriteIds.length]
-        mv4.visitVarInsn(ALOAD, 0);
-        mv4.visitVarInsn(ALOAD, 3); // Load spriteIds array
-        mv4.visitInsn(ARRAYLENGTH); // Get array length
-        mv4.visitIntInsn(NEWARRAY, T_INT); // Create new int array
-        mv4.visitFieldInsn(PUTFIELD, internalName, "texIds", "[I");
-
-        // this.engineIndex = 0;
-        mv4.visitVarInsn(ALOAD, 0);
-        mv4.visitInsn(ICONST_0);
-        mv4.visitFieldInsn(PUTFIELD, internalName, "engineIndex", "I");
-
-        // this.lastUsedFrame = -1
-        mv4.visitVarInsn(ALOAD, 0);
-        mv4.visitInsn(ICONST_M1); // Push -1
-        mv4.visitFieldInsn(PUTFIELD, internalName, "lastUsedFrame", "I");
-
-        // for (int i = 0; i < spriteIds.length; i++) {
-        //     java.lang.Object texWrapper = (java.lang.Object) rolflectionlib.util.TexReflection.texObjectMap.get(spriteIds[i]);
-        //     this.texIds[i] = rolflectionlib.util.TexReflection.getTexId(texWrapper);
-        // }
-        Label loopStart2 = new Label();
-        Label loopEnd2 = new Label();
-        mv4.visitInsn(ICONST_0); // i = 0
-        mv4.visitVarInsn(ISTORE, 6); // Store i in local variable 6
-        mv4.visitLabel(loopStart2);
-        mv4.visitVarInsn(ILOAD, 6); // Load i
-        mv4.visitVarInsn(ALOAD, 3); // Load spriteIds array
-        mv4.visitInsn(ARRAYLENGTH); // Get spriteIds.length
-        mv4.visitJumpInsn(IF_ICMPGE, loopEnd2); // if (i >= spriteIds.length) goto loopEnd2
-        
-        // texIds[i] = TexReflection.getTexId(TexReflection.texObjectMap.get(spriteIds[i]))
-        mv4.visitVarInsn(ALOAD, 0); // Load this
-        mv4.visitFieldInsn(GETFIELD, internalName, "texIds", "[I"); // Load texIds array
-        mv4.visitVarInsn(ILOAD, 6); // Load i
-        mv4.visitFieldInsn(GETSTATIC, "rolflectionlib/util/TexReflection", "texObjectMap", "Ljava/util/Map;");
-        mv4.visitVarInsn(ALOAD, 3); // Load spriteIds array
-        mv4.visitVarInsn(ILOAD, 6); // Load i
-        mv4.visitInsn(AALOAD); // Load spriteIds[i]
-        mv4.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get", "(Ljava/lang/Object;)Ljava/lang/Object;", true);
-        mv4.visitMethodInsn(INVOKESTATIC, "rolflectionlib/util/TexReflection", "getTexId", "(Ljava/lang/Object;)I", false);
-        mv4.visitInsn(IASTORE); // Store result in texIds[i]
-        
-        mv4.visitIincInsn(6, 1); // i++
-        mv4.visitJumpInsn(GOTO, loopStart2);
-        mv4.visitLabel(loopEnd2);
-
-        // this.engines = engines
-        mv4.visitVarInsn(ALOAD, 0);
-        mv4.visitVarInsn(ALOAD, 4);
-        mv4.visitFieldInsn(PUTFIELD, internalName, "engines", "Ljava/util/List;");
-
-        // this.engineTexDelegate = delegate
-        mv4.visitVarInsn(ALOAD, 0);
-        mv4.visitVarInsn(ALOAD, 5); // Load delegate parameter
-        mv4.visitFieldInsn(PUTFIELD, internalName, "engineTexDelegate", "Lrolflectionlib/inheritor/enginetex/EngineTexDelegate;");
-        mv4.visitInsn(RETURN);
-        mv4.visitMaxs(0, 0);
-        mv4.visitEnd();
-
         // Override texBindMethodName
         // public void texBindMethodName() {
         //     boolean isRollover = false;
@@ -299,8 +169,9 @@ public class EngineTexASM implements Opcodes {
         //     while (!this.engines.get(engineIndex).isActive()) {
         //         this.engineIndex = (this.engineIndex + this.enginesTotal) % enginesTotal;
         //     }
-        //
-        //     this.engineTexDelegate.onTexBind(engineIndex, isRollover);
+        //     if (this.engineTexDelegate != null) {
+        //         this.engineTexDelegate.onTexBind(engineIndex, isRollover);
+        //     }
         //
         //     rolflectionlib.util.TexReflection.setTexId(this, this.texIds[this.engineIndex]);
         //     super.texBindMethodName();

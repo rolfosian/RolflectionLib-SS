@@ -17,8 +17,8 @@ import org.objectweb.asm.Type;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.combat.ShipAPI;
+import com.fs.starfarer.combat.entities.Ship;
 
-import rolflectionlib.util.ClassRefs;
 import rolflectionlib.util.RolFileUtil;
 import rolflectionlib.util.RolfLectionUtil;
 import rolflectionlib.util.TexReflection;
@@ -62,9 +62,7 @@ public class EngineTex {
 
     public static final Class<?> ourTexClassInheritor;
     public static final MethodHandle engineTexClassCtorOne;
-    public static final MethodHandle engineTexClassCtorThree;
     public static final MethodHandle engineTexClassCtorTwo;
-    public static final MethodHandle engineTexClassCtorFour;
 
     private static Class<?> engineControllerClass;
     private static MethodHandle getEngineControllerHandle;
@@ -83,7 +81,7 @@ public class EngineTex {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-            for (Object method : ClassRefs.shipClass.getDeclaredMethods()) {
+            for (Object method : Ship.class.getDeclaredMethods()) {
                 String methodName = (String) RolfLectionUtil.getMethodNameHandle.invoke(method);
 
                 if (methodName.equals("getEngineController")) {
@@ -91,7 +89,7 @@ public class EngineTex {
                     if (engineControllerClass.isInterface()) continue;
                     
                     MethodType methodType = MethodType.methodType(engineControllerClass);
-                    getEngineControllerHandle = lookup.findVirtual(ClassRefs.shipClass, "getEngineController", methodType);
+                    getEngineControllerHandle = lookup.findVirtual(Ship.class, "getEngineController", methodType);
                     break;
                 }
             }
@@ -159,32 +157,101 @@ public class EngineTex {
             ourTexClassInheritor = EngineTexASM.buildEngineTexClass(EngineTex.class.getClassLoader(), TexReflection.texClass, engineClass, texBindMethodName);
 
             engineTexClassCtorOne = lookup.findConstructor(ourTexClassInheritor, MethodType.methodType(void.class, int.class, int.class, int[].class, List.class));
-            engineTexClassCtorThree = lookup.findConstructor(ourTexClassInheritor, MethodType.methodType(void.class, int.class, int.class, int[].class, List.class, EngineTexDelegate.class));
-
             engineTexClassCtorTwo = lookup.findConstructor(ourTexClassInheritor, MethodType.methodType(void.class, int.class, int.class, String[].class, List.class));
-            engineTexClassCtorFour = lookup.findConstructor(ourTexClassInheritor, MethodType.methodType(void.class, int.class, int.class, String[].class, List.class, EngineTexDelegate.class));
 
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static EngineTexInterface setEngineTextures(ShipAPI shipApi, EngineTexDelegate delegate) {
+    public static void setEngineTextures(ShipAPI shipApi, EngineTexDelegate... delegates) {
+        try {
+            Object engineController = shipApi.getEngineController();
+            Object engineGlow = getEngineGlowHandle.invoke(engineController);
+            List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
+
+            for (EngineTexDelegate delegate : delegates) {
+                delegate.setEngines(engines);
+                delegate.setContrailMap((Map<Object, Object>) engineGlowContrailMapVarHandle.get(engineGlow));
+
+                EngineTexInterface ourTexInheritor = instantiateEngineTex(delegate.getTexIds(0), engines);
+                ourTexInheritor.setDelegate(delegate);
+                delegate.setTexWrapper(ourTexInheritor);
+
+                switch(delegate.getType()) {
+                    case GLOW:
+                        engineGlowTexVarHandle.set(engineGlow, ourTexInheritor);
+                        continue;
+                    case SMOOTH_GLOW:
+                        engineGlowSmoothTexVarHandle.set(engineGlow, ourTexInheritor);
+                        continue;
+                    case GLOW_AND_SMOOTH_GLOW:
+                        engineGlowTexVarHandle.set(engineGlow, ourTexInheritor);
+                        engineGlowSmoothTexVarHandle.set(engineGlow, ourTexInheritor);
+                        continue;
+                    case FLAME:
+                        engineGlowFlameTexVarHandle.set(engineGlow, ourTexInheritor);
+                        continue;
+                    case ALL:
+                        engineGlowTexVarHandle.set(engineGlow, ourTexInheritor);
+                        engineGlowSmoothTexVarHandle.set(engineGlow, ourTexInheritor);
+                        engineGlowFlameTexVarHandle.set(engineGlow, ourTexInheritor);
+                        return;
+                }
+            }
+            return;
+
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Sets all engine glow textures (flame, glow, smooth glow) to delegate's singular texture order. This means that all three will use the same texture.
+     * @param shipApi Ship
+     * @param delegate EngineTexDelegate
+     */
+    public static void setEngineTextures(ShipAPI shipApi, EngineTexDelegate delegate) {
         try {
             Object engineController = getEngineControllerHandle.invoke(shipApi);
             Object engineGlow = getEngineGlowHandle.invoke(engineController);
     
             List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
+
             delegate.setEngines(engines);
             delegate.setContrailMap((Map<Object, Object>) engineGlowContrailMapVarHandle.get(engineGlow));
-            
-            EngineTexInterface ourTexInheritor = instantiateEngineTex(delegate.getTexIds(0), engines, delegate);
+
+            EngineTexInterface ourTexInheritor = instantiateEngineTex(delegate.getTexIds(0), engines);
+            ourTexInheritor.setDelegate(delegate);
             delegate.setTexWrapper(ourTexInheritor);
 
             engineGlowTexVarHandle.set(engineGlow, ourTexInheritor);
             engineGlowSmoothTexVarHandle.set(engineGlow, ourTexInheritor);
+            engineGlowFlameTexVarHandle.set(engineGlow, ourTexInheritor);
             
-            return ourTexInheritor;
+            return;
+
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static EngineTexInterface[] setEngineTextures(ShipAPI shipApi, int[] glowTextures, int[] smoothGlowTextures, int[] flameTextures) {
+        try {
+            Object engineController = getEngineControllerHandle.invoke(shipApi);
+            Object engineGlow = getEngineGlowHandle.invoke(engineController);
+            
+            List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
+            
+            EngineTexInterface glowTexture = instantiateEngineTex(glowTextures, engines);
+            EngineTexInterface smoothGlowTexture = instantiateEngineTex(smoothGlowTextures, engines);
+            EngineTexInterface flameTexture = instantiateEngineTex(flameTextures, engines);
+            
+            engineGlowTexVarHandle.set(engineGlow, glowTexture);
+            engineGlowSmoothTexVarHandle.set(engineGlow, smoothGlowTexture);
+            engineGlowFlameTexVarHandle.set(engineGlow, flameTexture);
+            
+            return new EngineTexInterface[] {glowTexture, smoothGlowTexture, flameTexture};
 
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -195,47 +262,23 @@ public class EngineTex {
         return (EngineTexInterface) engineTexClassCtorOne.invoke(GL11.GL_TEXTURE_2D, 0, intTexIds, engines);
     }
 
-    public static EngineTexInterface setEngineTextures(ShipAPI shipApi, int[] textures) {
-        try {
-            Object engineController = getEngineControllerHandle.invoke(shipApi);
-            Object engineGlow = getEngineGlowHandle.invoke(engineController);
-            
-            List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
-            
-            EngineTexInterface ourTexInheritor = instantiateEngineTex(textures, engines);
-            
-            engineGlowTexVarHandle.set(engineGlow, ourTexInheritor);
-            engineGlowSmoothTexVarHandle.set(engineGlow, ourTexInheritor);
-            
-            return ourTexInheritor;
-
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static EngineTexInterface instantiateEngineTex(int[] intTexIds, List<Object> engines, EngineTexDelegate delegate) throws Throwable {
-        return (EngineTexInterface) engineTexClassCtorThree.invoke(GL11.GL_TEXTURE_2D, 0, intTexIds, engines, delegate);
-
-    }
-
-    public static EngineTexInterface setEngineTextures(ShipAPI shipApi, int[] textures, EngineTexDelegate delegate) {
+    public static EngineTexInterface[] setEngineTextures(ShipAPI shipApi, String[] glowTextures, String[] smoothGlowTextures, String[] flameTextures) {
         try {
 
             Object engineController = getEngineControllerHandle.invoke(shipApi);
             Object engineGlow = getEngineGlowHandle.invoke(engineController);
     
             List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
-            delegate.setEngines(engines);
-            delegate.setContrailMap((Map<Object, Object>) engineGlowContrailMapVarHandle.get(engineGlow));
             
-            EngineTexInterface ourTexInheritor = instantiateEngineTex(textures, engines, delegate);
-            delegate.setTexWrapper(ourTexInheritor);
-    
-            engineGlowTexVarHandle.set(engineGlow, ourTexInheritor);
-            engineGlowSmoothTexVarHandle.set(engineGlow, ourTexInheritor);
-
-            return ourTexInheritor;
+            EngineTexInterface glowTexture = instantiateEngineTex(glowTextures, engines);
+            EngineTexInterface smoothGlowTexture = instantiateEngineTex(smoothGlowTextures, engines);
+            EngineTexInterface flameTexture = instantiateEngineTex(flameTextures, engines);
+            
+            engineGlowTexVarHandle.set(engineGlow, glowTexture);
+            engineGlowSmoothTexVarHandle.set(engineGlow, smoothGlowTexture);
+            engineGlowFlameTexVarHandle.set(engineGlow, flameTexture);
+            
+            return new EngineTexInterface[] {glowTexture, smoothGlowTexture, flameTexture};
 
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -244,54 +287,6 @@ public class EngineTex {
 
     private static EngineTexInterface instantiateEngineTex(String[] stringTexIds, List<Object> engines) throws Throwable {
         return (EngineTexInterface) engineTexClassCtorTwo.invoke(GL11.GL_TEXTURE_2D, 0, stringTexIds, engines);
-    }
-
-    public static EngineTexInterface setEngineTextures(ShipAPI shipApi, String[] textures) {
-        try {
-
-            Object engineController = getEngineControllerHandle.invoke(shipApi);
-            Object engineGlow = getEngineGlowHandle.invoke(engineController);
-    
-            List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
-            
-            EngineTexInterface ourTexInheritor = instantiateEngineTex(textures, engines);
-    
-            engineGlowTexVarHandle.set(engineGlow, ourTexInheritor);
-            engineGlowSmoothTexVarHandle.set(engineGlow, ourTexInheritor);
-
-            return ourTexInheritor;
-
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    private static EngineTexInterface instantiateEngineTex(String[] stringTexIds, List<Object> engines, EngineTexDelegate delegate) throws Throwable {
-        return (EngineTexInterface) engineTexClassCtorFour.invoke(GL11.GL_TEXTURE_2D, 0, stringTexIds, engines, delegate);
-    }
-
-    public static EngineTexInterface setEngineTextures(ShipAPI shipApi, String[] textures, EngineTexDelegate delegate) {
-        try {
-
-            Object engineController = getEngineControllerHandle.invoke(shipApi);
-            Object engineGlow = getEngineGlowHandle.invoke(engineController);
-    
-            List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
-            delegate.setEngines(engines);
-            delegate.setContrailMap((Map<Object, Object>) engineGlowContrailMapVarHandle.get(engineGlow));
-
-            EngineTexInterface ourTexInheritor = instantiateEngineTex(textures, engines, delegate);
-            delegate.setTexWrapper(ourTexInheritor);
-    
-            engineGlowTexVarHandle.set(engineGlow, ourTexInheritor);
-            engineGlowSmoothTexVarHandle.set(engineGlow, ourTexInheritor);
-
-            return ourTexInheritor;
-
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static void init() {}

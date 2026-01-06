@@ -208,7 +208,8 @@ public class AstralTestDelegate extends EngineTexDelegate {
     private int incr = 1;
     private boolean forwards = true;
 
-    public AstralTestDelegate() {
+    public AstralTestDelegate(EngineTexType type) {
+        super(type);
         this.engineTexOrder = Arrays.copyOf(engineTexOrderStatic, engineTexOrderStatic.length);
     }
 
