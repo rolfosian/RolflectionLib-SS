@@ -164,6 +164,13 @@ public class EngineTex {
         }
     }
 
+    /**
+     * Applies one or more {@link EngineTexDelegate} instances to a ship's engines.
+     * Each delegate determines which texture type(s) it overrides; processing stops early if a delegate handles all.
+     *
+     * @param shipApi ship whose engine textures are modified
+     * @param delegates delegates describing texture sources and target types
+     */
     public static void setEngineTextures(ShipAPI shipApi, EngineTexDelegate... delegates) {
         try {
             Object engineController = shipApi.getEngineController();
@@ -235,7 +242,17 @@ public class EngineTex {
             throw new RuntimeException(e);
         }
     }
-
+    
+    /**
+     * Sets engine textures individually using integer texture ids.
+     * Any {@code null} array leaves that texture type untouched and the returned entry will be {@code null}.
+     *
+     * @param shipApi Ship whose engines are updated
+     * @param glowTextures texture ids for standard glow frames, or {@code null} to keep the current glow texture
+     * @param smoothGlowTextures texture ids for smooth glow frames, or {@code null} to keep the current smooth glow texture
+     * @param flameTextures texture ids for flame animation frames, or {@code null} to keep the current flame texture
+     * @return array of wrappers for glow, smooth glow, and flame textures (entries are {@code null} for any texture left untouched)
+     */
     public static EngineTexInterface[] setEngineTextures(ShipAPI shipApi, int[] glowTextures, int[] smoothGlowTextures, int[] flameTextures) {
         try {
             Object engineController = getEngineControllerHandle.invoke(shipApi);
@@ -243,13 +260,22 @@ public class EngineTex {
             
             List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
             
-            EngineTexInterface glowTexture = instantiateEngineTex(glowTextures, engines);
-            EngineTexInterface smoothGlowTexture = instantiateEngineTex(smoothGlowTextures, engines);
-            EngineTexInterface flameTexture = instantiateEngineTex(flameTextures, engines);
-            
-            engineGlowTexVarHandle.set(engineGlow, glowTexture);
-            engineGlowSmoothTexVarHandle.set(engineGlow, smoothGlowTexture);
-            engineGlowFlameTexVarHandle.set(engineGlow, flameTexture);
+            EngineTexInterface glowTexture = null;
+            EngineTexInterface smoothGlowTexture = null;
+            EngineTexInterface flameTexture = null;
+
+            if (glowTextures != null) {
+                glowTexture = instantiateEngineTex(glowTextures, engines);
+                engineGlowTexVarHandle.set(engineGlow, glowTexture);
+            }
+            if (smoothGlowTextures != null) {
+                smoothGlowTexture = instantiateEngineTex(smoothGlowTextures, engines);
+                engineGlowSmoothTexVarHandle.set(engineGlow, smoothGlowTexture);
+            }
+            if (flameTextures != null) {
+                flameTexture = instantiateEngineTex(flameTextures, engines);
+                engineGlowFlameTexVarHandle.set(engineGlow, flameTexture);
+            }
             
             return new EngineTexInterface[] {glowTexture, smoothGlowTexture, flameTexture};
 
@@ -262,6 +288,16 @@ public class EngineTex {
         return (EngineTexInterface) engineTexClassCtorOne.invoke(GL11.GL_TEXTURE_2D, 0, intTexIds, engines);
     }
 
+    /**
+     * Sets engine textures individually using string texture ids.
+     * Any {@code null} array leaves that texture type untouched and the returned entry will be {@code null}.
+     *
+     * @param shipApi Ship whose engines are updated
+     * @param glowTextures texture ids for standard glow frames, or {@code null} to keep the current glow texture
+     * @param smoothGlowTextures texture ids for smooth glow frames, or {@code null} to keep the current smooth glow texture
+     * @param flameTextures texture ids for flame animation frames, or {@code null} to keep the current flame texture
+     * @return array of wrappers for glow, smooth glow, and flame textures (entries are {@code null} for any texture left untouched)
+     */
     public static EngineTexInterface[] setEngineTextures(ShipAPI shipApi, String[] glowTextures, String[] smoothGlowTextures, String[] flameTextures) {
         try {
 
@@ -270,13 +306,22 @@ public class EngineTex {
     
             List<Object> engines = (List<Object>) engineControllerGetEnginesHandle.invoke(engineController);
             
-            EngineTexInterface glowTexture = instantiateEngineTex(glowTextures, engines);
-            EngineTexInterface smoothGlowTexture = instantiateEngineTex(smoothGlowTextures, engines);
-            EngineTexInterface flameTexture = instantiateEngineTex(flameTextures, engines);
-            
-            engineGlowTexVarHandle.set(engineGlow, glowTexture);
-            engineGlowSmoothTexVarHandle.set(engineGlow, smoothGlowTexture);
-            engineGlowFlameTexVarHandle.set(engineGlow, flameTexture);
+            EngineTexInterface glowTexture = null;
+            EngineTexInterface smoothGlowTexture = null;
+            EngineTexInterface flameTexture = null;
+
+            if (glowTextures != null) {
+                glowTexture = instantiateEngineTex(glowTextures, engines);
+                engineGlowTexVarHandle.set(engineGlow, glowTexture);
+            }
+            if (smoothGlowTextures != null) {
+                smoothGlowTexture = instantiateEngineTex(smoothGlowTextures, engines);
+                engineGlowSmoothTexVarHandle.set(engineGlow, smoothGlowTexture);
+            }
+            if (flameTextures != null) {
+                flameTexture = instantiateEngineTex(flameTextures, engines);
+                engineGlowFlameTexVarHandle.set(engineGlow, flameTexture);
+            }
             
             return new EngineTexInterface[] {glowTexture, smoothGlowTexture, flameTexture};
 
