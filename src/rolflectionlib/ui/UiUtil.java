@@ -2,6 +2,13 @@ package rolflectionlib.ui;
 
 import java.util.*;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
+
 import org.objectweb.asm.*;
 
 import com.fs.starfarer.api.ui.UIComponentAPI;
@@ -13,10 +20,12 @@ import com.fs.starfarer.ui.impl.StandardTooltipV2;
 import com.fs.graphics.util.Fader;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
+import com.fs.starfarer.api.campaign.OptionPanelAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 
 import rolflectionlib.inheritor.Inherit;
+import rolflectionlib.util.RolFileUtil;
 import rolflectionlib.util.RolfLectionUtil;
 
 public class UiUtil implements Opcodes {
@@ -49,7 +58,7 @@ public class UiUtil implements Opcodes {
         public boolean isEnabled (Object uiComponent);
 
         public void setMouseOverPad(Object uiComponent, float pad1, float pad2, float pad3, float pad4);
-        public Fader getMouseOverHighlightFader(Object uiComponent);
+        public Fader getMouseoverHighlightFader(Object uiComponent);
 
         public UIPanelAPI getParent(Object uiComponent);
         public List<UIComponentAPI> getChildrenNonCopy(UIComponentAPI parent); // custom method with instanceof check uiPanelClass else return null
@@ -62,30 +71,48 @@ public class UiUtil implements Opcodes {
         public LabelAPI confirmDialogGetLabel(Object confirmDialog);
         public boolean isNoiseOnConfirmDismiss(Object confirmDialog);
         public void confirmDialogShow(Object confirmDialog, float durationIn, float durationOut);
-        public UIPanelAPI confirmDialogGetInnerPanel(Object confirmDialog);
+        public UIPanelAPI confirmDialogGetInnerPanel(Object confirmDialog); // custom method with instanceof check confirmDialog superclass else return null
         public Object confirmDialogGetHolo(Object confirmDialog);
+
+        public Map<ButtonAPI, Object> optionPanelGetButtonToItemMap(OptionPanelAPI optionPanel);
+        public Object optionPanelItemGetOptionData(Object optionItem);
+        public List<UIComponentAPI> listPanelGetItems(Object listPanel); // custom method with instanceof check listPanelClass else return null
     }
 
     // With this we can implement the above interface and generate a class at runtime to call obfuscated class methods platform agnostically without reflection overhead
-    private static Class<?>[] implementUiUtilInterface() {
+    private static Class<?>[] implementUiUtilInterface() throws Throwable {
         Class<?> coreClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCore", CampaignState.class));
-        Class<?> uiPanelClass = coreClass.getSuperclass();
+        Class<?> uiPanelClass = coreClass.getSuperclass().getSuperclass();
         Class<?> uiComponentClass = uiPanelClass.getSuperclass();
         Class<?> toolTipClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getTooltip", uiComponentClass));
         Class<?> interactionDialogClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("encounterDialog", CampaignState.class));
         Class<?> buttonClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByInterface(ButtonAPI.class, EventsPanel.class));
-        Class<?> actionListenerInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListener", buttonClass));
+        Class<?> actionPerformedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListener", buttonClass));
         Class<?> confirmDialogClass = AdminPickerDialog.class.getSuperclass();
-        Class<?> dialogDismissedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getDelegate", confirmDialogClass));
+        Class<?> listPanelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListAdmins", AdminPickerDialog.class));
+        Class<?> dialogDismissedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getDelegate", confirmDialogClass.getSuperclass()));
+
+        Class<?> optionPanelClass = getOptionPanelClass(interactionDialogClass);
+        Class<?> optionPanelItemClass = null;
+        for (Class<?> cls : optionPanelClass.getClasses()) {
+            if (RolfLectionUtil.getConstructorParamTypesSingleConstructor(cls).length == 4) {
+                optionPanelItemClass = cls;
+                break;
+            }
+        }
 
         String coreClassInternalName = Type.getInternalName(coreClass);
         String uiPanelInternalName = Type.getInternalName(uiPanelClass);
         String uiComponentInternalName = Type.getInternalName(uiComponentClass);
-        String toolTipClassInternalName = Type.getInternalName(toolTipClass);
+        String toolTipInternalName = Type.getInternalName(toolTipClass);
+        String interactionDialogInternalName = Type.getInternalName(interactionDialogClass);
+        String optionPanelInternalName = Type.getInternalName(optionPanelClass);
+        String optionPanelItemInternalName = Type.getInternalName(optionPanelItemClass);
         String buttonClassInternalName = Type.getInternalName(buttonClass);
-        String actionListenerInterfaceInternalName = Type.getInternalName(actionListenerInterface);
+        String actionPerformedInterfaceInternalName = Type.getInternalName(actionPerformedInterface);
         String campaignStateInternalName = Type.getInternalName(CampaignState.class);
-        String confirmDialogClassInternalName = Type.getInternalName(confirmDialogClass);
+        String confirmDialogInternalName = Type.getInternalName(confirmDialogClass);
+        String listPanelInternalName = Type.getInternalName(listPanelClass);
 
         String coreClassDesc = Type.getDescriptor(coreClass);
         String uiPanelClassDesc = Type.getDescriptor(uiPanelClass);
@@ -93,9 +120,10 @@ public class UiUtil implements Opcodes {
         String uiComponentApiDesc = Type.getDescriptor(UIComponentAPI.class);
         String buttonAPIDesc = Type.getDescriptor(ButtonAPI.class);
         String buttonClassDesc = Type.getDescriptor(buttonClass);
-        String actionListenerInterfaceDesc = Type.getDescriptor(actionListenerInterface);
+        String actionListenerInterfaceDesc = Type.getDescriptor(actionPerformedInterface);
         String tooltipDesc = Type.getDescriptor(toolTipClass);
         String labelAPIDesc = Type.getDescriptor(LabelAPI.class);
+        String optionPanelApiDesc = Type.getDescriptor(OptionPanelAPI.class);
 
         String superName = Type.getType(Object.class).getInternalName();
         String interfaceName = Type.getType(UiUtilInterface.class).getInternalName();
@@ -139,7 +167,6 @@ public class UiUtil implements Opcodes {
                 null
             );
             mv.visitCode();
-            String interactionDialogInternalName = Type.getInternalName(interactionDialogClass);
 
             mv.visitVarInsn(ALOAD, 1);
             mv.visitTypeInsn(CHECKCAST, interactionDialogInternalName);
@@ -232,14 +259,14 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, actionListenerInterfaceInternalName);
+            mv.visitTypeInsn(CHECKCAST, actionPerformedInterfaceInternalName);
 
             mv.visitVarInsn(ALOAD, 2);
             mv.visitVarInsn(ALOAD, 3);
 
             mv.visitMethodInsn(
                 INVOKEINTERFACE,
-                actionListenerInterfaceInternalName,
+                actionPerformedInterfaceInternalName,
                 "actionPerformed",
                 "(Ljava/lang/Object;Ljava/lang/Object;)V",
                 true // interface method
@@ -421,7 +448,7 @@ public class UiUtil implements Opcodes {
             mv.visitVarInsn(ALOAD, 1);
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                toolTipClassInternalName,
+                toolTipInternalName,
                 "getContents",
                 "()" + returnDesc,
                 false
@@ -785,16 +812,16 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public Fader getMouseOverHighlightFader(Object uiComponent) {
-        //     return ((uiComponentClass)uiComponent).getMouseOverHighlightFader();
+        // public Fader getMouseoverHighlightFader(Object uiComponent) {
+        //     return ((uiComponentClass)uiComponent).getMouseoverHighlightFader();
         // }
         {
-            Object getMouseOverHighlightFaderMethod = RolfLectionUtil.getMethod("getMouseOverHighlightFader", uiComponentClass, 0);
-            String getMouseOverHighlightFaderDesc = Type.getMethodDescriptor(getMouseOverHighlightFaderMethod);
+            Object getMouseoverHighlightFaderMethod = RolfLectionUtil.getMethod("getMouseoverHighlightFader", uiComponentClass);
+            String getMouseoverHighlightFaderDesc = Type.getMethodDescriptor(getMouseoverHighlightFaderMethod);
             String faderDesc = Type.getDescriptor(Fader.class);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
-                "getMouseOverHighlightFader",
+                "getMouseoverHighlightFader",
                 "(Ljava/lang/Object;)" + faderDesc,
                 null,
                 null
@@ -807,8 +834,8 @@ public class UiUtil implements Opcodes {
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
                 uiComponentInternalName,
-                "getMouseOverHighlightFader",
-                getMouseOverHighlightFaderDesc,
+                "getMouseoverHighlightFader",
+                getMouseoverHighlightFaderDesc,
                 false
             );
 
@@ -996,12 +1023,12 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
 
             mv.visitVarInsn(ILOAD, 2);
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                confirmDialogClassInternalName,
+                confirmDialogInternalName,
                 "dismiss",
                 "(I)V",
                 false
@@ -1027,12 +1054,12 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
             mv.visitVarInsn(ILOAD, 2);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                confirmDialogClassInternalName,
+                confirmDialogInternalName,
                 "getButton",
                 "(I)" + buttonClassDesc,
                 false
@@ -1059,11 +1086,11 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                confirmDialogClassInternalName,
+                confirmDialogInternalName,
                 "getLabel",
                 "()" + labelDesc,
                 false
@@ -1076,10 +1103,10 @@ public class UiUtil implements Opcodes {
         }
 
         // public boolean isNoiseOnConfirmDismiss(Object confirmDialog) {
-        //     return ((confirmDialogClass)confirmDialog).isNoiseOnDismiss();
+        //     return ((confirmDialogClass)confirmDialog).isNoiseOnConfirmDismiss();
         // }
         {
-            String isNoiseOnDismissDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("isNoiseOnDismiss", confirmDialogClass));
+            String isNoiseOnDismissDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("isNoiseOnConfirmDismiss", confirmDialogClass));
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "isNoiseOnConfirmDismiss",
@@ -1090,12 +1117,12 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                confirmDialogClassInternalName,
-                "isNoiseOnDismiss",
+                confirmDialogInternalName,
+                "isNoiseOnConfirmDismiss",
                 isNoiseOnDismissDesc,
                 false
             );
@@ -1120,13 +1147,13 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
             mv.visitVarInsn(FLOAD, 2);
             mv.visitVarInsn(FLOAD, 3);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                confirmDialogClassInternalName,
+                confirmDialogInternalName,
                 "show",
                 "(FF)V",
                 false
@@ -1139,9 +1166,12 @@ public class UiUtil implements Opcodes {
         }
 
         // public UIPanelAPI confirmDialogGetInnerPanel(Object confirmDialog) {
-        //     return ((confirmDialogClass)confirmDialog).getInnerPanel();
+        //     if (instanceof confirmDialogSuperClass) {
+        //         return ((confirmDialgSuperClass)confirmDialog).getInnerPanel();
+        //     }
+        //     return null;
         // }
-        {
+        {   
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "confirmDialogGetInnerPanel",
@@ -1152,11 +1182,22 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitTypeInsn(INSTANCEOF, confirmDialogInternalName);
+            
+            Label ifInstanceOf = new Label();
+            mv.visitJumpInsn(IFNE, ifInstanceOf);
+            
+            mv.visitInsn(ACONST_NULL);
+            mv.visitInsn(ARETURN);
+            
+            mv.visitLabel(ifInstanceOf);
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                confirmDialogClassInternalName,
+                confirmDialogInternalName,
                 "getInnerPanel",
                 "()" + uiPanelClassDesc,
                 false
@@ -1182,11 +1223,11 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, confirmDialogClassInternalName);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                confirmDialogClassInternalName,
+                confirmDialogInternalName,
                 "getHolo",
                 "()" + Type.getDescriptor(RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getHolo", confirmDialogClass))),
                 false
@@ -1197,20 +1238,137 @@ public class UiUtil implements Opcodes {
             mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
-        cw.visitEnd();
 
+        // public Map<ButtonAPI, Object> optionPanelGetButtonToItemMap(OptionPanelAPI optionPanel) {
+        //     return ((optionPanelClass)optionPanel).getButtonToItemMap();
+        // }
+        {
+            String mapDesc = Type.getDescriptor(Map.class);
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "optionPanelGetButtonToItemMap",
+                "(" + optionPanelApiDesc + ")" + mapDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, optionPanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                optionPanelInternalName,
+                "getButtonToItemMap",
+                "()" + mapDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object optionPanelItemGetOptionData(Object optionPanelItem) {
+        //     return ((optionPanelItemClass)optionPanelItem).getOptionData();
+        // }
+        {
+            String methodName = RolfLectionUtil.getMethodName(RolfLectionUtil.getMethodsByReturnType(optionPanelItemClass, Object.class).get(0));
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "optionPanelItemGetOptionData",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, optionPanelItemInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                optionPanelItemInternalName,
+                methodName,
+                "()" + Type.getDescriptor(Object.class),
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI listPanelGetItems(Object confirmDialog) {
+        //     if (confirmDialog instanceof confirmDialogSuperClass) {
+        //         return ((confirmDialgSuperClass)confirmDialog).getInnerPanel();
+        //     }
+        //     return null;
+        // }
+        {   
+            String listDesc = Type.getDescriptor(List.class);
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "listPanelGetItems",
+                "(Ljava/lang/Object;)" + listDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(INSTANCEOF, listPanelInternalName);
+            
+            Label ifInstanceOf = new Label();
+            mv.visitJumpInsn(IFNE, ifInstanceOf);
+            
+            mv.visitInsn(ACONST_NULL);
+            mv.visitInsn(ARETURN);
+            
+            mv.visitLabel(ifInstanceOf);
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, listPanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                listPanelInternalName,
+                "getItems",
+                "()" + listDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        cw.visitEnd();
         return new Class<?>[] {
             Inherit.inheritCl.define(cw.toByteArray(), "rolflectionlib.util.UiUtilInterface"),
             uiPanelClass,
             uiComponentClass,
-            // actionListenerInterface,
-            // dialogDismissedInterface
+            confirmDialogClass,
+            actionPerformedInterface,
+            dialogDismissedInterface,
+            listPanelClass
         };
     }
 
     public static final UiUtilInterface utils;
     public static final Class<?> uiPanelClass;
     public static final Class<?> uiComponentClass;
+    public static final Class<?> confirmDialogClass;
+    public static final Class<?> actionPerformedInterface;
+    public static final Class<?> dialogDismissedInterface;
+
+    public static final VarHandle listPanelMapVarHandle;
+
+    private static final CallSite dialogDismissedCallSite;
+    private static final CallSite actionPerformedCallSite;
 
     static {
         try {
@@ -1219,6 +1377,49 @@ public class UiUtil implements Opcodes {
             utils = (UiUtilInterface) RolfLectionUtil.instantiateClass(result[0].getConstructors()[0]);
             uiPanelClass = result[1];
             uiComponentClass = result[2];
+            confirmDialogClass = result[3];
+            actionPerformedInterface = result[4];
+            dialogDismissedInterface = result[5];
+
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            Class<?> listPanelClass = result[6];
+            listPanelMapVarHandle = MethodHandles.privateLookupIn(listPanelClass, lookup).findVarHandle(
+                listPanelClass,
+                RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(listPanelClass, Map.class)),
+                Map.class
+            );
+            
+            {
+                Class<?> dialogDismissedParamClass = RolfLectionUtil.getMethodParamTypes(dialogDismissedInterface.getDeclaredMethods()[0])[0];
+
+                MethodType actualSamMethodType = MethodType.methodType(void.class, dialogDismissedParamClass, int.class);
+                MethodHandle implementationMethodHandle = lookup.findVirtual(DialogDismissedListenerProxy.class, "dialogDismissed", MethodType.methodType(void.class, Object.class, int.class));
+                MethodType factoryType = MethodType.methodType(dialogDismissedInterface, DialogDismissedListenerProxy.class);
+    
+                dialogDismissedCallSite = LambdaMetafactory.metafactory(
+                    lookup,
+                    "dialogDismissed",
+                    factoryType,
+                    actualSamMethodType,
+                    implementationMethodHandle,
+                    actualSamMethodType
+                );
+            }
+
+            {
+                MethodType actualSamMethodType = MethodType.methodType(void.class, Object.class, Object.class);
+                MethodHandle implementationMethodHandle = lookup.findVirtual(ActionListenerProxy.class, "actionPerformed", MethodType.methodType(void.class, Object.class, Object.class));
+                MethodType factoryType = MethodType.methodType(actionPerformedInterface, ActionListenerProxy.class);
+                
+                actionPerformedCallSite = LambdaMetafactory.metafactory(
+                    lookup,
+                    "actionPerformed",
+                    factoryType,
+                    actualSamMethodType,
+                    implementationMethodHandle,
+                    actualSamMethodType
+                );
+            }
 
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -1229,5 +1430,119 @@ public class UiUtil implements Opcodes {
         return interactionDialog == null ? utils.campaignUIgetCore(campaignUI) : utils.interactionDialogGetCore(interactionDialog);
     }
 
-    public static void init() {} // call to load this class and generate the interface class in onApplicationLoad
+    public static void setButtonHook(ButtonAPI button, Runnable runBefore, Runnable runAfter) {
+        Object oldListener = utils.buttonGetListener(button);
+
+        utils.buttonSetListener(button, new ActionListener() {
+            @Override
+            public void actionPerformed(Object arg0, Object arg1) {
+                runBefore.run();
+                utils.actionPerformed(oldListener, arg0, arg1);
+                runAfter.run();
+            }
+        }.getProxy());
+    }
+
+    public static List<UIComponentAPI> getChildrenRecursive(UIComponentAPI parentPanel) {
+        List<UIComponentAPI> list = new ArrayList<>();
+        collectChildren(parentPanel, list);
+        return list;
+    }
+
+    private static void collectChildren(UIComponentAPI parent, List<UIComponentAPI> list) {
+        List<UIComponentAPI> children = UiUtil.utils.getChildrenNonCopy(parent);
+
+        if (children != null) {
+            for (UIComponentAPI child : children) {
+                list.add(child);
+                collectChildren(child, list);
+            }
+        }
+    }
+
+    public static abstract class ActionListener {
+        private final Object listener;
+
+        public ActionListener() {
+            try {
+                listener = actionPerformedCallSite.getTarget().invoke(new ActionListenerProxy(this));
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public abstract void actionPerformed(Object inputEvent, Object uiElement);
+
+        public Object getProxy() {
+            return this.listener;
+        }
+    }
+
+    public static abstract class DialogDismissedListener {
+        protected final Object listener;
+
+        public DialogDismissedListener() {
+            try {
+                listener = dialogDismissedCallSite.getTarget().invoke(new DialogDismissedListenerProxy(this));
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public abstract void dialogDismissed(Object arg0, int arg1);
+
+        public Object getProxy() {
+            return this.listener;
+        }
+    }
+
+
+    private static class DialogDismissedListenerProxy {
+        private final DialogDismissedListener listener;
+
+        public DialogDismissedListenerProxy(DialogDismissedListener listener) {
+            this.listener = listener;
+        }
+
+        public void dialogDismissed(Object arg0, int arg1) {
+            this.listener.dialogDismissed(arg0, arg1);
+        };
+    }
+
+    private static class ActionListenerProxy {
+        protected final ActionListener listener;
+
+        public ActionListenerProxy(ActionListener listener) {
+            this.listener = listener;
+        }
+
+        public void actionPerformed(Object arg0, Object arg1) {
+            listener.actionPerformed(arg0, arg1);
+        }
+    }
+
+    private static Class<?> getOptionPanelClass(Class<?> interactionDialogClass) {
+        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(interactionDialogClass));
+        final String[] fieldName = {null};
+
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
+                if (!name.equals("getOptionPanel")) return null;
+
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
+                        if (opcode == Opcodes.GETFIELD) {
+                            fieldName[0] = fld;
+                        }
+                    }
+                };
+            }
+        }, 0);
+
+        return RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName(fieldName[0], interactionDialogClass));
+    }
+
+    public static void init() {} // called to load this class and generate the interface class in onApplicationLoad
 }

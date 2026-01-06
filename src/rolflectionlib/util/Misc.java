@@ -14,12 +14,9 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
 
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.loading.Description;
-import com.fs.starfarer.loading.SpecStore;
 
-import rolflectionlib.util.ListenerFactory.ActionListener;
-import rolflectionlib.util.ListenerFactory.DialogDismissedListener;
+import rolflectionlib.ui.UiUtil.DialogDismissedListener;
 
 @SuppressWarnings("unchecked")
 public class Misc {
@@ -64,7 +61,6 @@ public class Misc {
     public static Object createInputEventInstance(InputEventClass eventClass, InputEventType eventType, int x, int y, int val, char char_) {
         return RolfLectionUtil.instantiateClass(
             ClassRefs.inputEventClassConstructor,
-            ClassRefs.inputEventClass,
             eventClass,
             eventType,
             x,
@@ -81,41 +77,6 @@ public class Misc {
         RolfLectionUtil.invokeMethodDirectly(ClassRefs.buttonListenerActionPerformedMethod, listener, createButtonClickEventInstance(((ButtonAPI)button).getPosition()), button);
     }
 
-    public static void setButtonHook(ButtonAPI button, Runnable runBefore, Runnable runAfter) {
-        Object oldListener = RolfLectionUtil.invokeMethodDirectly(ClassRefs.buttonGetListenerMethod, button);
-
-        RolfLectionUtil.invokeMethodDirectly(ClassRefs.buttonSetListenerMethod, button, new ActionListener() {
-            @Override
-            public void trigger(Object... args) {
-                runBefore.run();
-                RolfLectionUtil.invokeMethodDirectly(ClassRefs.buttonListenerActionPerformedMethod, oldListener, args);
-                runAfter.run();
-            }
-        }.getProxy());
-    }
-
-    public static List<Object> getChildrenRecursive(Object parentPanel) {
-        List<Object> list = new ArrayList<>();
-        collectChildren(parentPanel, list);
-        return list;
-    }
-
-    private static void collectChildren(Object parent, List<Object> list) {
-        List<Object> children;
-
-        if (ClassRefs.uiPanelClass.isInstance(parent)) {
-            children = (List<Object>) RolfLectionUtil.invokeMethodDirectly(ClassRefs.uiPanelgetChildrenNonCopyMethod, parent);
-        } else {
-            children = null;
-        }
-
-        if (children != null) {
-            for (Object child : children) {
-                list.add(child);
-                collectChildren(child, list);
-            }
-        }
-    }
     /**
      * Only works in campaign.
      * @return CoreUI

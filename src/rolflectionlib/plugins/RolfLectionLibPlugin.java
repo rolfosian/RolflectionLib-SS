@@ -14,8 +14,8 @@ import com.fs.starfarer.loading.SpecStore;
 import rolflectionlib.inheritor.enginetex.EngineTex;
 import rolflectionlib.inheritor.examples.MultiListener;
 
+import rolflectionlib.ui.UiUtil;
 import rolflectionlib.util.ClassRefs;
-import rolflectionlib.util.ListenerFactory;
 import rolflectionlib.util.Misc;
 import rolflectionlib.util.ObfuscatedClasses;
 import rolflectionlib.util.RolfLectionUtil;
@@ -42,10 +42,10 @@ public class RolfLectionLibPlugin extends BaseModPlugin {
         RolfLectionUtil.init();
 
         ClassRefs.findAllClasses();
-        ListenerFactory.init();
         TexReflection.init();
         EngineTex.init();
         MultiListener.init();
+        UiUtil.init();
 
         for (Object method : SpecStore.class.getDeclaredMethods()) {
             if (RolfLectionUtil.getReturnType(method).equals(Map.class)) {
