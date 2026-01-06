@@ -3,7 +3,6 @@ package rolflectionlib.inheritor.enginetex;
 import org.objectweb.asm.*;
 
 import rolflectionlib.inheritor.Inherit;
-import rolflectionlib.util.RolfLectionUtil;
 
 public class EngineTexASM implements Opcodes {
 
