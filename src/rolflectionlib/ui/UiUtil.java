@@ -1503,7 +1503,7 @@ public class UiUtil implements Opcodes {
         public DialogDismissedListenerProxy(DialogDismissedListener listener) {
             this.listener = listener;
         }
-
+        @SuppressWarnings("unused")
         public void dialogDismissed(Object arg0, int arg1) {
             this.listener.dialogDismissed(arg0, arg1);
         };
@@ -1515,7 +1515,7 @@ public class UiUtil implements Opcodes {
         public ActionListenerProxy(ActionListener listener) {
             this.listener = listener;
         }
-
+        @SuppressWarnings("unused")
         public void actionPerformed(Object arg0, Object arg1) {
             listener.actionPerformed(arg0, arg1);
         }
