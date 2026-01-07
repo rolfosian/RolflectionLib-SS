@@ -1474,7 +1474,6 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, uiTableInternalName);
             mv.visitVarInsn(ALOAD, 2);
 
             mv.visitMethodInsn(
@@ -1505,7 +1504,6 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, uiTableInternalName);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
@@ -1539,13 +1537,12 @@ public class UiUtil implements Opcodes {
             mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
             mv.visitVarInsn(ALOAD, 3);
-            mv.visitTypeInsn(CHECKCAST, inputEventInternalName);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
                 uiTableInternalName,
                 "select",
-                "(" + uiTableRowDesc + inputEventDesc + ")V",
+                "(" + uiTableRowDesc + "Ljava/lang/Object;)V",
                 false
             );
 
@@ -1573,14 +1570,13 @@ public class UiUtil implements Opcodes {
             mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
             mv.visitVarInsn(ALOAD, 3);
-            mv.visitTypeInsn(CHECKCAST, inputEventInternalName);
             mv.visitVarInsn(ILOAD, 4);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
                 uiTableInternalName,
                 "select",
-                "(" + uiTableRowDesc + inputEventDesc + "Z)V",
+                "(" + uiTableRowDesc + "Ljava/lang/Object;Z)V",
                 false
             );
 
