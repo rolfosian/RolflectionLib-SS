@@ -17,6 +17,7 @@ import com.fs.starfarer.campaign.CampaignState;
 import com.fs.starfarer.campaign.command.AdminPickerDialog;
 import com.fs.starfarer.campaign.comms.v2.EventsPanel;
 import com.fs.starfarer.ui.impl.StandardTooltipV2;
+import com.fs.starfarer.campaign.ui.UITable;
 import com.fs.graphics.util.Fader;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
@@ -77,6 +78,18 @@ public class UiUtil implements Opcodes {
         public Map<ButtonAPI, Object> optionPanelGetButtonToItemMap(OptionPanelAPI optionPanel);
         public Object optionPanelItemGetOptionData(Object optionItem);
         public List<UIComponentAPI> listPanelGetItems(Object listPanel); // custom method with instanceof check listPanelClass else return null
+
+        public List<Object> uiTablegetRows(UITable table);
+        public void uiTableAddRow(UITable table, Object row);
+        public void uiTableRemoveRow(UITable table, Object row);
+        public Object uiTableGetRowForData(UITable table, Object data);
+
+        public Object uiTableGetSelected(UITable table);
+        public void uiTableSelect(UITable table, Object row, Object inputEvent);
+        public void uiTableSelect(UITable table, Object row, Object inputEvent, boolean notifyDelegate);
+
+        public UIPanelAPI uiTableGetList(UITable table);
+
     }
 
     // With this we can implement the above interface and generate a class at runtime to call obfuscated class methods platform agnostically without reflection overhead
@@ -91,6 +104,8 @@ public class UiUtil implements Opcodes {
         Class<?> confirmDialogClass = AdminPickerDialog.class.getSuperclass();
         Class<?> listPanelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListAdmins", AdminPickerDialog.class));
         Class<?> dialogDismissedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getDelegate", confirmDialogClass.getSuperclass()));
+        Class<?> uiTableRowClass = RolfLectionUtil.getReturnType((RolfLectionUtil.getMethod("getSelected", UITable.class)));
+        Class<?> inputEventClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("buttonPressed", buttonClass))[0];
 
         Class<?> optionPanelClass = getOptionPanelClass(interactionDialogClass);
         Class<?> optionPanelItemClass = null;
@@ -113,6 +128,9 @@ public class UiUtil implements Opcodes {
         String campaignStateInternalName = Type.getInternalName(CampaignState.class);
         String confirmDialogInternalName = Type.getInternalName(confirmDialogClass);
         String listPanelInternalName = Type.getInternalName(listPanelClass);
+        String uiTableInternalName = Type.getInternalName(UITable.class);
+        String uiTableRowInternalName = Type.getInternalName(uiTableRowClass);
+        String inputEventInternalName = Type.getInternalName(inputEventClass);
 
         String coreClassDesc = Type.getDescriptor(coreClass);
         String uiPanelClassDesc = Type.getDescriptor(uiPanelClass);
@@ -124,6 +142,12 @@ public class UiUtil implements Opcodes {
         String tooltipDesc = Type.getDescriptor(toolTipClass);
         String labelAPIDesc = Type.getDescriptor(LabelAPI.class);
         String optionPanelApiDesc = Type.getDescriptor(OptionPanelAPI.class);
+        String uiTableDesc = Type.getDescriptor(UITable.class);
+        String uiTableRowDesc = Type.getDescriptor(uiTableRowClass);
+        String inputEventDesc = Type.getDescriptor(inputEventClass);
+        String listDesc = Type.getDescriptor(List.class);
+        String mapDesc = Type.getDescriptor(Map.class);
+        String listPanelDesc = Type.getDescriptor(listPanelClass);
 
         String superName = Type.getType(Object.class).getInternalName();
         String interfaceName = Type.getType(UiUtilInterface.class).getInternalName();
@@ -235,7 +259,7 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 coreClassInternalName,
                 "getCurrentTab",
-                "()" + Type.getDescriptor(uiPanelClass),
+                "()" + uiPanelClassDesc,
                 false
             );
 
@@ -1243,7 +1267,6 @@ public class UiUtil implements Opcodes {
         //     return ((optionPanelClass)optionPanel).getButtonToItemMap();
         // }
         {
-            String mapDesc = Type.getDescriptor(Map.class);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "optionPanelGetButtonToItemMap",
@@ -1308,7 +1331,6 @@ public class UiUtil implements Opcodes {
         //     return null;
         // }
         {   
-            String listDesc = Type.getDescriptor(List.class);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "listPanelGetItems",
@@ -1346,7 +1368,257 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public List<Object> uiTablegetRows(UITable table) {
+        //     return table.getRows();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTablegetRows",
+                "(" + uiTableDesc + ")" + listDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableInternalName,
+                "getRows",
+                "()" + listDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void uiTableAddRow(UITable table, Object row) {
+        //     table.addRow(row);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableAddRow",
+                "(" + uiTableDesc + "Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableInternalName,
+                "addRow",
+                "(" + uiTableRowDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void uiTableRemoveRow(UITable table, Object row) {
+        //     table.removeRow(row);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableRemoveRow",
+                "(" + uiTableDesc + "Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableInternalName,
+                "removeRow",
+                "(" + uiTableRowDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object uiTableGetRowForData(UITable table, Object data) {
+        //     return table.getRowForData(data);
+        // }
+        {
+            Object getRowForDataMethod = RolfLectionUtil.getMethod("getRowForData", UITable.class, 1);
+            String getRowForDataDesc = Type.getMethodDescriptor(getRowForDataMethod);
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableGetRowForData",
+                "(" + uiTableDesc + "Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiTableInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableInternalName,
+                "getRowForData",
+                getRowForDataDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object uiTableGetSelected(UITable table) {
+        //     return table.getSelected();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableGetSelected",
+                "(" + uiTableDesc + ")Ljava/lang/Object;" ,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiTableInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableInternalName,
+                "getSelected",
+                "()" + uiTableRowDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void uiTableSelect(UITable table, Object row, Object inputEvent) {
+        //     table.select(row, inputEvent);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableSelect",
+                "(" + uiTableDesc + "Ljava/lang/Object;Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+            mv.visitVarInsn(ALOAD, 3);
+            mv.visitTypeInsn(CHECKCAST, inputEventInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableInternalName,
+                "select",
+                "(" + uiTableRowDesc + inputEventDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void uiTableSelect(UITable table, Object row, Object inputEvent, boolean notifyDelegate) {
+        //     table.select(row, inputEvent, notifyDelegate);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableSelect",
+                "(" + uiTableDesc + "Ljava/lang/Object;Ljava/lang/Object;Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+            mv.visitVarInsn(ALOAD, 3);
+            mv.visitTypeInsn(CHECKCAST, inputEventInternalName);
+            mv.visitVarInsn(ILOAD, 4);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableInternalName,
+                "select",
+                "(" + uiTableRowDesc + inputEventDesc + "Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI uiTableGetList(UITable table) {
+        //     return table.getList();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableGetList",
+                "(" + uiTableDesc + ")" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableInternalName,
+                "getList",
+                "()" + listPanelDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
         cw.visitEnd();
+
         return new Class<?>[] {
             Inherit.inheritCl.define(cw.toByteArray(), "rolflectionlib.util.UiUtilInterface"),
             uiPanelClass,
