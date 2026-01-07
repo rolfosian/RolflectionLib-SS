@@ -359,6 +359,6 @@ public class EngineTexASM implements Opcodes {
         getDelegate.visitEnd();
 
         cw.visitEnd();
-        return Inherit.inheritCl.define(cw.toByteArray(), "com.fs.graphics.EngineTex");
+        return Inherit.inheritCl.define(cw.toByteArray(), "rolflectionlib.inheritor.enginetex.EngineTexture");
     }
 }
