@@ -1301,9 +1301,9 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public UIPanelAPI listPanelGetItems(Object confirmDialog) {
-        //     if (confirmDialog instanceof confirmDialogSuperClass) {
-        //         return ((confirmDialgSuperClass)confirmDialog).getInnerPanel();
+        // public List<UIComponent> listPanelGetItems(Object listPanel) {
+        //     if (listPanel instanceof listPanelClass) {
+        //         return ((listPanelClass)listPanel).getItems();
         //     }
         //     return null;
         // }
