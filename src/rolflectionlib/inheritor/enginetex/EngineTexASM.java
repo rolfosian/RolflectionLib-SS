@@ -13,7 +13,7 @@ public class EngineTexASM implements Opcodes {
             String texBindMethodName
     ) throws Exception {
 
-        String internalName = "com/fs/graphics/EngineTex";
+        String internalName = "rolflectionlib/inheritor/enginetex/EngineTexture";
         String superName = Type.getInternalName(texSuperClass);
         String engineDesc = Type.getDescriptor(engineClass);
         String engineInternalName = Type.getInternalName(engineClass);
@@ -21,10 +21,10 @@ public class EngineTexASM implements Opcodes {
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 
-        // package com.fs.graphics;
+        // package rolflectionlib.inheritor.enginetex;
         // import rolflectionlib.inheritor.enginetex.EngineTexInterface;
 
-        // public Class EngineTex extends texSuperClass implements EngineTexInterface;
+        // public Class EngineTexture extends texSuperClass implements EngineTexInterface;
         cw.visit(V17, ACC_PUBLIC, internalName, null, superName, new String[]{interfaceName});
 
         // fields

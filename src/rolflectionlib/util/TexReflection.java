@@ -28,8 +28,6 @@ public class TexReflection {
     public static Map<String, Object> texObjectMap;
     public static Map<String, Integer> texIdMap = new HashMap<>();
 
-    public static Class<?> shipClass;
-
     static {
         try {
             Lookup lookup = MethodHandles.lookup();

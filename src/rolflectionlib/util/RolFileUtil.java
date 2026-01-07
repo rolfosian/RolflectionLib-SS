@@ -55,7 +55,6 @@ public class RolFileUtil {
             faosFlushMethod = RolfLectionUtil.getMethod("flush", faosClass, 0);
             faosCloseMethod = RolfLectionUtil.getMethod("close", faosClass, 0);
 
-
             Class<?> baosClass = Class.forName("java.io.ByteArrayOutputStream", false, Class.class.getClassLoader());
 
             baosCtor = RolfLectionUtil.getConstructor(baosClass, new Class<?>[0]);
