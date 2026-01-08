@@ -1,7 +1,7 @@
 package rolflectionlib.ui;
 
 import java.util.*;
-
+import java.awt.Color;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
@@ -11,19 +11,30 @@ import java.lang.invoke.VarHandle;
 
 import org.objectweb.asm.*;
 
-import com.fs.starfarer.api.ui.UIComponentAPI;
-import com.fs.starfarer.api.ui.UIPanelAPI;
+import com.fs.starfarer.title.TitleScreenState;
+import com.fs.starfarer.campaign.BaseLocation;
 import com.fs.starfarer.campaign.CampaignState;
 import com.fs.starfarer.campaign.command.AdminPickerDialog;
 import com.fs.starfarer.campaign.comms.v2.EventsPanel;
+
 import com.fs.starfarer.ui.impl.StandardTooltipV2;
+import com.fs.starfarer.ui.impl.StandardTooltipV2Expandable;
+
 import com.fs.starfarer.campaign.ui.UITable;
+import com.fs.starfarer.coreui.refit.WeaponPickerDialog;
+
+import com.fs.graphics.Sprite;
 import com.fs.graphics.util.Fader;
+
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.OptionPanelAPI;
+import com.fs.starfarer.api.campaign.SectorEntityToken;
+import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
+import com.fs.starfarer.api.ui.UIPanelAPI;
+import com.fs.starfarer.api.ui.PositionAPI;
 
 import rolflectionlib.inheritor.Inherit;
 import rolflectionlib.util.RolFileUtil;
@@ -31,20 +42,52 @@ import rolflectionlib.util.RolfLectionUtil;
 
 public class UiUtil implements Opcodes {
     public static interface UiUtilInterface {
-        public Object interactionDialogGetCore(Object interactionDialog);
-        public Object campaignUIgetCore(Object campaignUI);
+        public UIPanelAPI titleScreenStateGetScreenPanel(Object titleScreenState);
+        public UIPanelAPI interactionDialogGetCore(Object interactionDialog);
+
+        public UIPanelAPI campaignUIgetCore(Object campaignUI);
+        public UIPanelAPI campaignUIgetScreenPanel(Object campaignUI);
+        public float campaignUIgetZoomFactor(Object campaignUI);
+
         public UIPanelAPI coreGetCurrentTab(Object core);
+
+        public EventsPanel getEventsPanel(Object intelTab); 
+        public ButtonAPI intelTabGetPlanetsButton(Object intelTab);
+        public UIPanelAPI intelTabGetPlanetsPanel(Object intelTab);
+
+        public UIPanelAPI eventsPanelGetMap(EventsPanel eventsPanel);
+        public UIPanelAPI mapTabGetMap(Object mapTab);
+
+        public BaseLocation mapGetLocation(UIPanelAPI map);
+        public UIPanelAPI mapGetMapTab(UIPanelAPI map);
+        public Object getZoomTracker(UIPanelAPI map);
+        public float getFactor(UIPanelAPI map);
+
+        public float getMaxZoomFactor(Object zoomTracker);
+        public float getZoomLevel(Object zoomTracker);
+
+        public Object getMessageDisplay(Object campaignUI);
+        public Object getCourseWidget(Object campaignUI);
+        public SectorEntityToken getNextStep(Object courseWidget, SectorEntityToken target);
+        public Fader getInner(Object courseWidget);
+        public float getPhase(Object courseWidget);
 
         public void actionPerformed(Object listener, Object inputEvent, Object uiElement);
 
         public void buttonSetListener(Object button, Object listener);
         public Object buttonGetListener(Object button);
+        public Object buttonGetRendererPanel(Object button); // TODO
+        public Object buttonGetRendererCheckbox(Object button); // TODO
+
+        public void labelAutosize(Object label); // TODO
         
         public Fader uiComponentGetFader(Object uiComponent);
+        public void uiComponentSetFader(Object uiComponent, Fader fader);
         public Object uiComponentGetTooltip(Object uiComponent);
         public void uiComponentShowTooltip(Object uiComponent, Object tooltip);
         public void uiComponentHideTooltip(Object uiComponent, Object tooltip);
         public void setTooltipOffsetFromCenter(Object uiComponent, float xPad, float yPad);
+        public void setTooltipPositionRelativeToAnchor(Object uiComponent, float xPad, float yPad, Object anchor); // anchor should be instance of uicomponent
         public UIComponentAPI getContents(Object tooltip);
 
         public void setSlideData(Object uiComponent, float xOffset, float yOffset, float durationIn, float durationOut);
@@ -57,11 +100,16 @@ public class UiUtil implements Opcodes {
         public boolean isSlidOut (Object uiComponent);
         public boolean isSlidingIn (Object uiComponent);
         public boolean isEnabled (Object uiComponent);
+        public boolean setEnabled(Object uiComponent, boolean enabled);
 
+        public float getOpacity(Object uiComponent); // TODO
+        public void setOpacity(Object uiComponent, float opacity); // TODO
         public void setMouseOverPad(Object uiComponent, float pad1, float pad2, float pad3, float pad4);
         public Fader getMouseoverHighlightFader(Object uiComponent);
 
+        public UIPanelAPI findTopAncestor(Object uiComponent);
         public UIPanelAPI getParent(Object uiComponent);
+        public void setParent(Object uiComponent, Object parent);
         public List<UIComponentAPI> getChildrenNonCopy(UIComponentAPI parent); // custom method with instanceof check uiPanelClass else return null
         public List<UIComponentAPI> getChildrenNonCopy(UIPanelAPI uiPanel); // direct cast
         public List<UIComponentAPI> getChildrenCopy(UIPanelAPI uiPanel);
@@ -78,11 +126,18 @@ public class UiUtil implements Opcodes {
         public Map<ButtonAPI, Object> optionPanelGetButtonToItemMap(OptionPanelAPI optionPanel);
         public Object optionPanelItemGetOptionData(Object optionItem);
         public List<UIComponentAPI> listPanelGetItems(Object listPanel); // custom method with instanceof check listPanelClass else return null
+        public void listPanelAdditem(Object listPanel, Object toAdd); // TODO
+        public void listPanelClear(Object listPanel); // TODO
 
         public List<Object> uiTablegetRows(UITable table);
         public void uiTableAddRow(UITable table, Object row);
         public void uiTableRemoveRow(UITable table, Object row);
         public Object uiTableGetRowForData(UITable table, Object data);
+        public UIPanelAPI uiTableRowGetCol(Object row, int col);
+        public ButtonAPI uiTableRowGetButton(Object row);
+        public void uiTableRowSetButton(Object row, Object button);
+        public Object uiTableRowGetData(Object row);
+        public void uiTableRowSetData(Object row, Object data); // data type is actually java.lang.Object, no cast required
 
         public Object uiTableGetSelected(UITable table);
         public void uiTableSelect(UITable table, Object row, Object inputEvent);
@@ -90,9 +145,43 @@ public class UiUtil implements Opcodes {
 
         public UIPanelAPI uiTableGetList(UITable table);
 
+        public void pickerDialogNotifyFilterChanged(Object pickerDialog);
+
+        public void imagePanelSetRenderSchematic(Object imagePanel, boolean renderSchematic);
+        public void imagePanelAutoSize(Object imagePanel);
+        public void imagePanelAutoSizeToWidth(Object imagePanel, float width);
+        public void imagePanelAutoSizeToHeight(Object imagePanel, float height);
+        public void imagePanelSetStretch(Object imagePanel, boolean stretch);
+        public Sprite imagePanelGetSprite(Object imagePanel);
+        public void imagePanelSetSprite(Object imagePanel, Sprite sprite); // TODO add boolean
+        public String imagePanelGetSpriteName(Object imagePanel);
+        public void imagePanelSetSprite(Object imagePanel, String spriteName); // TODO add boolean
+        public Color imagePanelGetBorderColor(Object imagePanel);
+        public void imagePanelSetBorderColor(Object imagePanel, Color borderColor);
+        public boolean imagePanelIsWithOutline(Object imagePanel); // TODO
+        public void imagePanelSetIsWithOutline(Object imagePanel, boolean isWithOutline); // TODO
+        public boolean imagePanelIsTexClamp(Object imagePanel); // TODO
+        public void imagePanelSetTexClamp(Object imagePanel, boolean texClamp); // TODO
+        public boolean imagePanelIsForceNoRounding(Object imagePanel); // TODO
+        public boolean imagePanelSetForceNoRounding(Object imagePanel, boolean forceNoRounding); // TODO
+        public float imagePanelGetOriginalAR(Object imagePanel); // TODO
+
+        
+        public PositionAPI positionRelativeTo(PositionAPI position, PositionAPI targetRelativePosition, float var2, float var3, float var4, float var5, float var6, float var7);
+        public float positionGetXAlignOffset(PositionAPI position);
+        public float positionGetYAlignOffset(PositionAPI position);
+
+        public void addTooltipAbove(Object tooltip, Object uiComponent);
+        public void addTooltipBelow(Object tooltip, Object uiComponent);
+        public void addTooltipRight(Object tooltip, Object uiComponent);
+        public void addTooltipLeft(Object tooltip, Object uiComponent);
+        public void addTooltipAbove(Object tooltip, Object uiComponent, float padding);
+        public void addTooltipBelow(Object tooltip, Object uiComponent, float padding);
+        public void addTooltipRight(Object tooltip, Object uiComponent, float padding);
+        public void addTooltipLeft(Object tooltip, Object uiComponent, float padding);
     }
 
-    // With this we can implement the above interface and generate a class at runtime to call obfuscated class methods platform agnostically without reflection overhead
+    // With this we can implement the above interface and generate a class at runtime to call obfuscated class methods platform agnostically without RolfLectionUtilection overhead
     private static Class<?>[] implementUiUtilInterface() throws Throwable {
         Class<?> coreClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCore", CampaignState.class));
         Class<?> uiPanelClass = coreClass.getSuperclass().getSuperclass();
@@ -106,6 +195,19 @@ public class UiUtil implements Opcodes {
         Class<?> dialogDismissedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getDelegate", confirmDialogClass.getSuperclass()));
         Class<?> uiTableRowClass = RolfLectionUtil.getReturnType((RolfLectionUtil.getMethod("getSelected", UITable.class)));
         Class<?> inputEventClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("buttonPressed", buttonClass))[0];
+        Class<?> imagePanelClass = getImagePanelClass();
+        Class<?> positionClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("add", uiPanelClass));
+        Class<?> addTooltipUiComponentClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class))[0];
+        Class<?> courseWidgetClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCourseWidget", CampaignState.class));
+        Class<?> messageDisplayClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("messageDisplay", CampaignState.class));
+
+        Class<?> mapTabClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getMap", EventsPanel.class));
+        Class<?> mapClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getMap", mapTabClass));
+        Class<?> intelTabClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getIntelTab", EventsPanel.class));
+        Class<?> intelTabPlanetsPanelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getPlanetsPanel", intelTabClass));
+        Class<?> zoomTrackerClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getZoomTracker", mapClass));
+
+        String[] zoomTrackerMethodNames = getZoomTrackerMethodNames(zoomTrackerClass);
 
         Class<?> optionPanelClass = getOptionPanelClass(interactionDialogClass);
         Class<?> optionPanelItemClass = null;
@@ -116,6 +218,15 @@ public class UiUtil implements Opcodes {
             }
         }
 
+        Class<?> pickerDialogFilterNotifyInterface = null;
+        for (Class<?> interfc : WeaponPickerDialog.class.getInterfaces()) {
+            if (RolfLectionUtil.getMethod("notifyFilterChanged", interfc) != null) {
+                pickerDialogFilterNotifyInterface = interfc;
+                break;
+            }
+        }
+
+        String titleScreenStateInternalName = Type.getInternalName(TitleScreenState.class);
         String coreClassInternalName = Type.getInternalName(coreClass);
         String uiPanelInternalName = Type.getInternalName(uiPanelClass);
         String uiComponentInternalName = Type.getInternalName(uiComponentClass);
@@ -131,10 +242,24 @@ public class UiUtil implements Opcodes {
         String uiTableInternalName = Type.getInternalName(UITable.class);
         String uiTableRowInternalName = Type.getInternalName(uiTableRowClass);
         String inputEventInternalName = Type.getInternalName(inputEventClass);
+        String pickerDialogFilterNotifyInterfaceInternalName = Type.getInternalName(pickerDialogFilterNotifyInterface);
+        String imagePanelInternalName = Type.getInternalName(imagePanelClass);
+        String spriteInternalName = Type.getInternalName(Sprite.class);
+        String colorInternalName = Type.getInternalName(Color.class);
+        String positionInternalName = Type.getInternalName(positionClass);
+        String standardTooltipV2InternalName = Type.getInternalName(StandardTooltipV2.class);
+        String standardTooltipV2ExpandableInternalName = Type.getInternalName(StandardTooltipV2Expandable.class);
+        String addTooltipUiComponentInternalName = Type.getInternalName(addTooltipUiComponentClass);
+        String courseWidgetInternalName = Type.getInternalName(courseWidgetClass);
+        String mapTabInternalName = Type.getInternalName(mapTabClass);
+        String mapClassInternalName = Type.getInternalName(mapClass);
+        String intelTabInternalName = Type.getInternalName(intelTabClass);
 
+        String titleScreenStateDesc = Type.getDescriptor(TitleScreenState.class);
         String coreClassDesc = Type.getDescriptor(coreClass);
         String uiPanelClassDesc = Type.getDescriptor(uiPanelClass);
         String uiPanelAPIDesc = Type.getDescriptor(UIPanelAPI.class);
+        String uiComponentClassDesc = Type.getDescriptor(uiComponentClass);
         String uiComponentApiDesc = Type.getDescriptor(UIComponentAPI.class);
         String buttonAPIDesc = Type.getDescriptor(ButtonAPI.class);
         String buttonClassDesc = Type.getDescriptor(buttonClass);
@@ -148,6 +273,20 @@ public class UiUtil implements Opcodes {
         String listDesc = Type.getDescriptor(List.class);
         String mapDesc = Type.getDescriptor(Map.class);
         String listPanelDesc = Type.getDescriptor(listPanelClass);
+        String imagePanelClassDesc = Type.getDescriptor(imagePanelClass);
+        String positionClassDesc = Type.getDescriptor(positionClass);
+        String positionAPIDesc = Type.getDescriptor(PositionAPI.class);
+        String colorDesc = Type.getDescriptor(Color.class);
+        String spriteDesc = Type.getDescriptor(Sprite.class);
+        String stringDesc = Type.getDescriptor(String.class);
+        String standardTooltipV2Desc = Type.getDescriptor(StandardTooltipV2.class);
+        String addTooltipUiComponentDesc = Type.getDescriptor(addTooltipUiComponentClass);
+        String mapTabDesc = Type.getDescriptor(mapTabClass);
+        String sectorEntityTokenDesc = Type.getDescriptor(SectorEntityToken.class);
+        String eventsPanelDesc = Type.getDescriptor(EventsPanel.class);
+        String baseLocationDesc = Type.getDescriptor(BaseLocation.class);
+
+        // String addTooltipMethodDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class));
 
         String superName = Type.getType(Object.class).getInternalName();
         String interfaceName = Type.getType(UiUtilInterface.class).getInternalName();
@@ -178,15 +317,45 @@ public class UiUtil implements Opcodes {
         ctor.visitInsn(RETURN);
         ctor.visitMaxs(0, 0);
         ctor.visitEnd();
+
+        // public UIPanelAPI titleScreenStateGetScreenPanel(Object titleScreenState) {
+        //     return ((TitleScreenState)titleScreenState).getScreenPanel();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "titleScreenStateGetScreenPanel",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, titleScreenStateInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                titleScreenStateInternalName,
+                "getCoreUI",
+                "()" + uiPanelClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
         
-        // public Object interactionDialogGetCore(Object interactionDialog) {
+        // public UIPanelAPI interactionDialogGetCore(Object interactionDialog) {
         //     return ((interactionDialogClass)interactionDialog).getCoreUI();
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "interactionDialogGetCore",
-                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
                 null,
                 null
             );
@@ -209,14 +378,14 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public Object campaignUIgetCore(Object campaignUI) {
+        // public UIPanelAPI campaignUIgetCore(Object campaignUI) {
         //     return ((CampaignState)campaignUI).getCore();
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "campaignUIgetCore",
-                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
                 null,
                 null
             );
@@ -230,6 +399,66 @@ public class UiUtil implements Opcodes {
                 campaignStateInternalName,
                 "getCore",
                 "()" + coreClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI campaignUIgetScreenPanel(Object campaignUI) {
+        //     return ((CampaignState)campaignUI).getScreenPanel();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "campaignUIgetScreenPanel",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, campaignStateInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                campaignStateInternalName,
+                "getScreenPanel",
+                "()" + uiPanelClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float campaignUIgetFactor(Object campaignUI) {
+        //     return ((CampaignState)campaignUI).getFactor();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "campaignUIgetFactor",
+                "(Ljava/lang/Object;)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, campaignStateInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                campaignStateInternalName,
+                "getFactor",
+                "()F",
                 false
             );
 
@@ -264,6 +493,493 @@ public class UiUtil implements Opcodes {
             );
 
             mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI intelTabGetPlanetsPanel(Object intelTab) {
+        //     return ((intelTabClass)intelTab).getPlanetsPanel();
+        // }
+        {   
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "intelTabGetPlanetsPanel",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, intelTabInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                intelTabInternalName,
+                "getPlanetsPanel",
+                "()" + Type.getDescriptor(intelTabPlanetsPanelClass),
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public ButtonAPI intelTabGetPlanetsButton(Object intelTab) {
+        //     return ((intelTabClass)intelTab).getPlanetsButton();
+        // }
+        {   
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "intelTabGetPlanetsButton",
+                "(Ljava/lang/Object;)" + buttonAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, intelTabInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                intelTabInternalName,
+                "getPlanetsButton",
+                "()" + buttonClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public EventsPanel getEventsPanel(Object intelTab) {
+        //     return ((intelTabClass)intelTab).getEventsPanel();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getEventsPanel",
+                "(Ljava/lang/Object;)" + eventsPanelDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, Type.getInternalName(intelTabClass));
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(intelTabClass),
+                "getEventsPanel",
+                "()" + eventsPanelDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI eventsPanelGetMap(EventsPanel eventsPanel) {
+        //     return ((EventsPanel)eventsPanel).getMap();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "eventsPanelGetMap",
+                "(" + eventsPanelDesc + ")" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(EventsPanel.class),
+                "getMap",
+                "()" + mapTabDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI mapTabGetMap(Object mapTab) {
+        //     return ((mapTabClass)mapTab).getMap();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "mapTabGetMap",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, mapTabInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                mapTabInternalName,
+                "getMap",
+                "()" + Type.getDescriptor(mapClass),
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public BaseLocation mapGetLocation(UIPanelAPI map) {
+        //     return ((mapClass)map).getLocation();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "mapGetLocation",
+                "(" + uiPanelAPIDesc + ")" + baseLocationDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+
+            mv.visitTypeInsn(CHECKCAST, mapClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                mapClassInternalName,
+                "getLocation",
+                "()" + baseLocationDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public boolean isRadarMode(UIPanelAPI map) {
+        //     return ((mapClass)map).isRadarMode();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "isRadarMode",
+                "(" + uiPanelAPIDesc + ")Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, mapClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                mapClassInternalName,
+                "isRadarMode",
+                "()Z",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object getZoomTracker(UIPanelAPI map) {
+        //     return ((mapClass)map).getZoomTracker();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getZoomTracker",
+                "(" + uiPanelAPIDesc + ")Ljava/lang/Object;",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, mapClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                mapClassInternalName,
+                "getZoomTracker",
+                "()" + Type.getDescriptor(zoomTrackerClass),
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float getFactor(UIPanelAPI map) {
+        //     return ((mapClass)map).getFactor();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getFactor",
+                "(" + uiPanelAPIDesc + ")F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, mapClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                mapClassInternalName,
+                "getFactor",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float getZoomLevel(Object zoomTracker) {
+        //     return ((zoomTrackerClass)zoomTracker).zoomLevelMethodName();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getZoomLevel",
+                "(Ljava/lang/Object;)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, Type.getInternalName(zoomTrackerClass));
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(zoomTrackerClass),
+                zoomTrackerMethodNames[0],
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float getMaxZoomFactor(Object zoomTracker) {
+        //     return ((zoomTrackerClass)zoomTracker).getMaxZoomFactorMethodName();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getMaxZoomFactor",
+                "(Ljava/lang/Object;)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, Type.getInternalName(zoomTrackerClass));
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                Type.getInternalName(zoomTrackerClass),
+                zoomTrackerMethodNames[1],
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object getMessageDisplay(Object campaignUI) {
+        //     return ((CampaignState)campaignUI).getMessageDisplay();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getMessageDisplay",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, campaignStateInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                campaignStateInternalName,
+                "getMessageDisplay",
+                "()" + Type.getDescriptor(messageDisplayClass),
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object getCourseWidget(Object campaignUI) {
+        //     return ((CampaignState)campaignUI).getCourseWidget();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getCourseWidget",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, campaignStateInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                campaignStateInternalName,
+                "getCourseWidget",
+                "()" + Type.getDescriptor(courseWidgetClass),
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public SectorEntityToken getNextStep(Object courseWidget, SectorEntityToken target) {
+        //     return ((courseWidgetClass)courseWidget).getNextStep(target);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getNextStep",
+                "(" +
+                    "Ljava/lang/Object;" +
+                    sectorEntityTokenDesc +
+                ")" +
+                sectorEntityTokenDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+        
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, courseWidgetInternalName);
+        
+            mv.visitVarInsn(ALOAD, 2);
+        
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                courseWidgetInternalName,
+                "getNextStep",
+                "(" + sectorEntityTokenDesc + ")" + sectorEntityTokenDesc,
+                false
+            );
+        
+            mv.visitInsn(ARETURN);
+        
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Fader getInner(Object courseWidget) {
+        //     return ((courseWidgetClass)courseWidget).getFader();
+        // }
+        {
+            String faderDesc = Type.getDescriptor(Fader.class);
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getInner",
+                "(Ljava/lang/Object;)" + faderDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, courseWidgetInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                courseWidgetInternalName,
+                "getInner",
+                "()" + faderDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float getPhase(Object courseWidget) {
+        //     return ((courseWidgetClass)courseWidget).getPhase();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getPhase",
+                "(Ljava/lang/Object;)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, courseWidgetInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                courseWidgetInternalName,
+                "getPhase",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -446,6 +1162,72 @@ public class UiUtil implements Opcodes {
                 uiComponentInternalName,
                 "hideTooltip",
                 "(Ljava/lang/Object;)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void setTooltipOffsetFromCenter(Object uiComponent, float xPad, float yPad) {
+        //     ((uiComponentClass)uiComponent).setTooltipOffsetFromCenter(xPad, yPad);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "setTooltipOffsetFromCenter",
+                "(Ljava/lang/Object;FF)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiComponentInternalName,
+                "setTooltipOffsetFromCenter",
+                "(FF)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void setTooltipPositionRelativeToAnchor(Object uiComponent, float xPad, float yPad, Object anchor) {
+        //     ((uiComponentClass)uiComponent).setTooltipPositionRelativeToAnchor(xPad, yPad, (uiComponentClass)anchor);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "setTooltipPositionRelativeToAnchor",
+                "(Ljava/lang/Object;FFLjava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitVarInsn(FLOAD, 3);
+            mv.visitVarInsn(ALOAD, 4);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiComponentInternalName,
+                "setTooltipPositionRelativeToAnchor",
+                "(FF" + uiComponentClassDesc + ")V",
                 false
             );
 
@@ -800,6 +1582,37 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public boolean setEnabled(Object uiComponent, boolean enabled) {
+        //     return ((uiComponentClass)uiComponent).setEnabled(enabled);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "setEnabled",
+                "(Ljava/lang/Object;Z)Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiComponentInternalName,
+                "setEnabled",
+                "(Z)Z",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
         // public void setMouseOverPad(Object uiComponent, float pad1, float pad2, float pad3, float pad4) {
         //     ((uiComponentClass)uiComponent).setMouseOverPad(pad1, pad2, pad3, pad4);
         // }
@@ -869,6 +1682,36 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public UIPanelAPI findTopAncestor(Object uiComponent) {
+        //     return ((uiComponentClass)uiComponent).findTopAncestor();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "findTopAncestor",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiComponentInternalName,
+                "findTopAncestor",
+                "()" + uiPanelClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
         // public UIPanelAPI getParent(Object uiComponent) {
         //     return ((uiComponentClass)uiComponent).getParent();
         // }
@@ -890,6 +1733,39 @@ public class UiUtil implements Opcodes {
                 uiComponentInternalName,
                 "getParent",
                 "()" + uiPanelClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI setParent(Object uiComponent, Object toSet) {
+        //     return ((uiComponentClass)uiComponent).setParent((uiPanelClass)toSet);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "setParent",
+                "(Ljava/lang/Object;Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, uiPanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiComponentInternalName,
+                "setParent",
+                "(" + uiPanelClassDesc + ")V",
                 false
             );
 
@@ -1490,6 +2366,163 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public UIPanelAPI uiTableRowGetCol(Object row, int col) {
+        //     return ((UITableRow)row).getCol(col);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableRowGetCol",
+                "(Ljava/lang/Object;I)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableRowInternalName,
+                "getCol",
+                "(I)" + uiPanelAPIDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public ButtonAPI uiTableRowGetButton(Object row) {
+        //     return ((UITableRow)row).getButton();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableRowGetButton",
+                "(Ljava/lang/Object;)" + buttonAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableRowInternalName,
+                "getButton",
+                "()" + buttonClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void uiTableRowSetButton(Object row, Object button) {
+        //     ((UITableRow)row).setButton((Button)button);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableRowSetButton",
+                "(Ljava/lang/Object;Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, buttonClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableRowInternalName,
+                "setButton",
+                "(" + buttonClassDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object uiTableRowGetData(Object row) {
+        //     return ((UITableRow)row).getData();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableRowGetData",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableRowInternalName,
+                "getData",
+                "()Ljava/lang/Object;",
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void uiTableRowSetData(Object row, Object data) {
+        //     ((UITableRow)row).setData(data);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "uiTableRowSetData",
+                "(Ljava/lang/Object;Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiTableRowInternalName);
+
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiTableRowInternalName,
+                "setData",
+                "(Ljava/lang/Object;)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
         // public Object uiTableGetSelected(UITable table) {
         //     return table.getSelected();
         // }
@@ -1609,6 +2642,668 @@ public class UiUtil implements Opcodes {
             );
 
             mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "pickerDialogNotifyFilterChanged",
+                "(Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, pickerDialogFilterNotifyInterfaceInternalName);
+            
+            mv.visitMethodInsn(
+                INVOKEINTERFACE,
+                pickerDialogFilterNotifyInterfaceInternalName,
+                "notifyFilterChanged",
+                "()V",
+                true // interface method
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelSetRenderSchematic(Object imagePanel, boolean renderSchematic) {
+        //     ((imagePanelClass)imagePanel).setRenderSchematic(renderSchematic);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelSetRenderSchematic",
+                "(Ljava/lang/Object;Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "setRenderSchematic",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelAutoSize(Object imagePanel) {
+        //     ((imagePanelClass)imagePanel).autoSize();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelAutoSize",
+                "(Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "autoSize",
+                "()V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelAutoSizeToWidth(Object imagePanel, float width) {
+        //     ((imagePanelClass)imagePanel).autoSizeToWidth(width);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelAutoSizeToWidth",
+                "(Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "autoSizeToWidth",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelAutoSizeToHeight(Object imagePanel, float height) {
+        //     ((imagePanelClass)imagePanel).autoSizeToHeight(height);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelAutoSizeToHeight",
+                "(Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "autoSizeToHeight",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelSetStretch(Object imagePanel, boolean stretch) {
+        //     ((imagePanelClass)imagePanel).setStretch(stretch);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelSetStretch",
+                "(Ljava/lang/Object;Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "setStretch",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Sprite imagePanelGetSprite(Object imagePanel) {
+        //     return ((imagePanelClass)imagePanel).getSprite();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelGetSprite",
+                "(Ljava/lang/Object;)" + spriteDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "getSprite",
+                "()" + spriteDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelSetSprite(Object imagePanel, Sprite sprite) {
+        //     ((imagePanelClass)imagePanel).setSprite(sprite);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelSetSprite",
+                "(Ljava/lang/Object;" + spriteDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "setSprite",
+                "(" + spriteDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public String imagePanelGetSpriteName(Object imagePanel) {
+        //     return ((imagePanelClass)imagePanel).getSpriteName();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelGetSpriteName",
+                "(Ljava/lang/Object;)" + stringDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "getSpriteName",
+                "()" + stringDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelSetSprite(Object imagePanel, String spriteName) {
+        //     ((imagePanelClass)imagePanel).setSprite(spriteName);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelSetSprite",
+                "(Ljava/lang/Object;" + stringDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "setSprite",
+                "(" + stringDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Color imagePanelGetBorderColor(Object imagePanel) {
+        //     return ((imagePanelClass)imagePanel).getBorderColor();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelGetBorderColor",
+                "(Ljava/lang/Object;)" + colorDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "getBorderColor",
+                "()" + colorDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelSetBorderColor(Object imagePanel, Color borderColor) {
+        //     ((imagePanelClass)imagePanel).setBorderColor(borderColor);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelSetBorderColor",
+                "(Ljava/lang/Object;" + colorDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "setBorderColor",
+                "(" + colorDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public PositionAPI positionRelativeTo(PositionAPI position, PositionAPI targetRelativePos float var2, float var3, float var4, float var5, float var6, float var7) {
+        //     return ((positionClass)position).relativeTo((positionClass)targetRelativePos, var2, var3, var4, var5, var6, var7);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "positionRelativeTo",
+                "(" + positionAPIDesc + positionAPIDesc + "FFFFFF)" + positionAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, positionInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, positionInternalName);
+            mv.visitVarInsn(FLOAD, 3);
+            mv.visitVarInsn(FLOAD, 4);
+            mv.visitVarInsn(FLOAD, 5);
+            mv.visitVarInsn(FLOAD, 6);
+            mv.visitVarInsn(FLOAD, 7);
+            mv.visitVarInsn(FLOAD, 8);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                positionInternalName,
+                "relativeTo",
+                "(" + positionClassDesc + "FFFFFF)" + positionClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void addTooltipAbove(Object tooltip, Object uiComponent) {
+        //     StandardTooltipV2Expandable.addTooltipAbove((addTooltipUiComponentClass)uiComponent, (StandardTooltipV2)tooltip);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "addTooltipAbove",
+                "(Ljava/lang/Object;Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
+
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                standardTooltipV2ExpandableInternalName,
+                "addTooltipAbove",
+                "(" + addTooltipUiComponentDesc + standardTooltipV2Desc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void addTooltipBelow(Object tooltip, Object uiComponent) {
+        //     StandardTooltipV2Expandable.addTooltipBelow((addTooltipUiComponentClass)uiComponent, (StandardTooltipV2)tooltip);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "addTooltipBelow",
+                "(Ljava/lang/Object;Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
+
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                standardTooltipV2ExpandableInternalName,
+                "addTooltipBelow",
+                "(" + addTooltipUiComponentDesc + standardTooltipV2Desc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void addTooltipRight(Object tooltip, Object uiComponent) {
+        //     StandardTooltipV2Expandable.addTooltipRight((addTooltipUiComponentClass)uiComponent, (StandardTooltipV2)tooltip);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "addTooltipRight",
+                "(Ljava/lang/Object;Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
+
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                standardTooltipV2ExpandableInternalName,
+                "addTooltipRight",
+                "(" + addTooltipUiComponentDesc + standardTooltipV2Desc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void addTooltipLeft(Object tooltip, Object uiComponent) {
+        //     StandardTooltipV2Expandable.addTooltipLeft((addTooltipUiComponentClass)uiComponent, (StandardTooltipV2)tooltip);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "addTooltipLeft",
+                "(Ljava/lang/Object;Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
+
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                standardTooltipV2ExpandableInternalName,
+                "addTooltipLeft",
+                "(" + addTooltipUiComponentDesc + standardTooltipV2Desc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void addTooltipAbove(Object tooltip, Object uiComponent, float padding) {
+        //     StandardTooltipV2Expandable.addTooltipAbove((addTooltipUiComponentClass)uiComponent, (StandardTooltipV2)tooltip, padding);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "addTooltipAbove",
+                "(Ljava/lang/Object;Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                standardTooltipV2ExpandableInternalName,
+                "addTooltipAbove",
+                "(" + addTooltipUiComponentDesc + standardTooltipV2Desc + "F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void addTooltipBelow(Object tooltip, Object uiComponent, float padding) {
+        //     StandardTooltipV2Expandable.addTooltipBelow((addTooltipUiComponentClass)uiComponent, (StandardTooltipV2)tooltip, padding);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "addTooltipBelow",
+                "(Ljava/lang/Object;Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                standardTooltipV2ExpandableInternalName,
+                "addTooltipBelow",
+                "(" + addTooltipUiComponentDesc + standardTooltipV2Desc + "F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void addTooltipRight(Object tooltip, Object uiComponent, float padding) {
+        //     StandardTooltipV2Expandable.addTooltipRight((addTooltipUiComponentClass)uiComponent, (StandardTooltipV2)tooltip, padding);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "addTooltipRight",
+                "(Ljava/lang/Object;Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                standardTooltipV2ExpandableInternalName,
+                "addTooltipRight",
+                "(" + addTooltipUiComponentDesc + standardTooltipV2Desc + "F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void addTooltipLeft(Object tooltip, Object uiComponent, float padding) {
+        //     StandardTooltipV2Expandable.addTooltipLeft((addTooltipUiComponentClass)uiComponent, (StandardTooltipV2)tooltip, padding);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "addTooltipLeft",
+                "(Ljava/lang/Object;Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                standardTooltipV2ExpandableInternalName,
+                "addTooltipLeft",
+                "(" + addTooltipUiComponentDesc + standardTooltipV2Desc + "F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -1810,6 +3505,123 @@ public class UiUtil implements Opcodes {
         }, 0);
 
         return RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName(fieldName[0], interactionDialogClass));
+    }
+
+    private static Class<?> getImagePanelClass() throws ClassNotFoundException {
+        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(StandardTooltipV2Expandable.class));
+        final String[] className = {null};
+
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
+                if (!name.equals("addImage") || !desc.split(";")[1].equals("FF)V")) return null;
+
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitTypeInsn(int opcode, String name) {
+                        if (opcode == NEW) {
+                            className[0] = name;
+                        }
+                    }
+                };
+            }
+        }, 0);
+
+        return Class.forName(className[0].replace("/", "."));
+    }
+
+    private static String[] getZoomTrackerMethodNames(Class<?> zoomTrackerClass) {
+        final String[] foundNames = {null, null};
+        final String[] maxZoomFactorFieldName = {null};
+
+        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(zoomTrackerClass));
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
+                if (!desc.equals("()F")) return null;
+
+                return new MethodVisitor(Opcodes.ASM9) {
+                    int fieldGets = 0;
+                    int fcmps = 0;
+                    int fReturns = 0;
+
+                    String lastFieldName;
+                    String secondCompareField;
+    
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
+                        if (opcode == Opcodes.GETFIELD && fldDesc.equals("F")) {
+                            fieldGets++;
+                            lastFieldName = fld;
+                        }
+                    }
+    
+                    @Override
+                    public void visitInsn(int opcode) {
+                        if (opcode == Opcodes.FCMPG || opcode == Opcodes.FCMPL) {
+                            fcmps++;
+                            if (fcmps == 2) {
+                                secondCompareField = lastFieldName;
+                            }
+                        }
+                        if (opcode == Opcodes.FRETURN) {
+                            fReturns++;
+                        }
+                    }
+    
+                    @Override
+                    public void visitEnd() {
+                        if (fieldGets >= 3 && fcmps >= 2 && fReturns == 1) {
+                            foundNames[0] = name;
+                            maxZoomFactorFieldName[0] = secondCompareField;
+                        }
+                    }
+                };
+            }
+        }, 0);
+
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
+                if (!desc.equals("()F") || access != ACC_PUBLIC) return null;
+
+                return new MethodVisitor(Opcodes.ASM9) {
+                    int fieldGets = 0;
+                    int fReturns = 0;
+                    int visitFieldInsns = 0;
+                    int visitMethodInsns = 0;
+
+                    @Override
+                    public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                        visitMethodInsns++;
+                    }
+
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
+                        visitFieldInsns++;
+                        if (opcode == Opcodes.GETFIELD && fldDesc.equals("F") && fld.equals(maxZoomFactorFieldName[0])) {
+                            fieldGets++;
+                        }
+                    }
+
+                    @Override
+                    public void visitInsn(int opcode) {
+                        if (opcode == Opcodes.FRETURN) {
+                            fReturns++;
+                        }
+                    }
+
+                    @Override
+                    public void visitEnd() {
+                        if (fieldGets == 1 && fReturns == 1 && visitFieldInsns == 1 & visitMethodInsns == 0) {
+                            foundNames[1] = name;
+                        }
+                    }
+                };
+            }
+        }, 0);
+
+        return foundNames;
     }
 
     public static void init() {} // called to load this class and generate the interface class in onApplicationLoad
