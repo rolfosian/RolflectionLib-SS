@@ -168,8 +168,10 @@ public class UiUtil implements Opcodes {
         public float imagePanelGetOriginalAR(Object imagePanel);
 
         public PositionAPI positionRelativeTo(PositionAPI position, PositionAPI targetRelativePosition, float var2, float var3, float var4, float var5, float var6, float var7);
-        public float positionGetXAlignOffset(PositionAPI position);
-        public float positionGetYAlignOffset(PositionAPI position);
+        public float positionGetXAlignOffset(Object position);
+        public float positionGetYAlignOffset(Object position);
+        public void positionSetXAlignOffset(Object position, float offset);
+        public void positionSetYAlignOffset(Object position, float offset);
 
         public void addTooltipAbove(Object tooltip, Object uiComponent);
         public void addTooltipBelow(Object tooltip, Object uiComponent);
@@ -199,7 +201,7 @@ public class UiUtil implements Opcodes {
         Class<?> uiTableRowClass = RolfLectionUtil.getReturnType((RolfLectionUtil.getMethod("getSelected", UITable.class)));
         Class<?> inputEventClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("buttonPressed", buttonClass))[0];
         Class<?> imagePanelClass = getImagePanelClass();
-        Class<?> positionClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("add", uiPanelClass));
+        Class<?> positionClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("setPos", uiComponentClass))[0];
         Class<?> addTooltipUiComponentClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class))[0];
         Class<?> courseWidgetClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCourseWidget", CampaignState.class));
         Class<?> messageDisplayClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("messageDisplay", CampaignState.class));
@@ -260,6 +262,7 @@ public class UiUtil implements Opcodes {
         String mapTabInternalName = Type.getInternalName(mapTabClass);
         String mapClassInternalName = Type.getInternalName(mapClass);
         String intelTabInternalName = Type.getInternalName(intelTabClass);
+        String zoomTrackerClassInternalName = Type.getInternalName(zoomTrackerClass);
 
         String titleScreenStateDesc = Type.getDescriptor(TitleScreenState.class);
         String coreClassDesc = Type.getDescriptor(coreClass);
@@ -294,6 +297,7 @@ public class UiUtil implements Opcodes {
         String baseLocationDesc = Type.getDescriptor(BaseLocation.class);
         String faderDesc = Type.getDescriptor(Fader.class);
         String labelDesc = Type.getDescriptor(labelClass);
+        String zoomTrackerDesc = Type.getDescriptor(zoomTrackerClass);
 
         // String addTooltipMethodDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class));
 
@@ -737,7 +741,7 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 mapClassInternalName,
                 "getZoomTracker",
-                "()" + Type.getDescriptor(zoomTrackerClass),
+                "()" + zoomTrackerDesc,
                 false
             );
 
@@ -791,11 +795,11 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, Type.getInternalName(zoomTrackerClass));
+            mv.visitTypeInsn(CHECKCAST, zoomTrackerClassInternalName);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                Type.getInternalName(zoomTrackerClass),
+                zoomTrackerClassInternalName,
                 zoomTrackerMethodNames[0],
                 "()F",
                 false
@@ -1026,37 +1030,156 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public float positionGetXAlignOffset(Object position) {
+        //     return ((positionClass)position).getXAlignOffset();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "positionGetXAlignOffset",
+                "(Ljava/lang/Object;)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, positionInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                positionInternalName,
+                "getXAlignOffset",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float positionGetYlignOffset(Object position) {
+        //     return ((positionClass)position).getYAlignOffset();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "positionGetYAlignOffset",
+                "(Ljava/lang/Object;)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, positionInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                positionInternalName,
+                "getYAlignOffset",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void positionSetXAlignOffset(Object position, float offset) {
+        //     return ((positionClass)position).setXAlignOffset(offset);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "positionSetXAlignOffset",
+                "(Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, positionInternalName);
+
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                positionInternalName,
+                "setXAlignOffset",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void positionSetYAlignOffset(Object position, float offset) {
+        //     return ((positionClass)position).getYAlignOffset(offset);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "positionSetYAlignOffset",
+                "(Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, positionInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                positionInternalName,
+                "setYAlignOffset",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
         // public PositionAPI labelAutoSize(Object label) {
         //     return ((labelClass)label).autoSize();
         // }
         {
-            {
-                MethodVisitor mv = cw.visitMethod(
-                    ACC_PUBLIC,
-                    "labelAutoSize",
-                    "(Ljava/lang/Object;)V",
-                    null,
-                    null
-                );
-                mv.visitCode();
-    
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitTypeInsn(CHECKCAST, labelInternalName);
-    
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitMethodInsn(
-                    INVOKEVIRTUAL,
-                    labelInternalName,
-                    "autoSize",
-                    "()" + positionClassDesc,
-                    false
-                );
-    
-                mv.visitInsn(ARETURN);
-    
-                mv.visitMaxs(0, 0);
-                mv.visitEnd();
-            }
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "labelAutoSize",
+                "(Ljava/lang/Object;)" + positionAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, labelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                labelInternalName,
+                "autoSize",
+                "()" + positionClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
         }
 
         // public void buttonSetListener(Object button, Object listener) {
@@ -2440,7 +2563,7 @@ public class UiUtil implements Opcodes {
         {   
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
-                "listPanelclear",
+                "listPanelClear",
                 "(Ljava/lang/Object;)V",
                 null,
                 null
@@ -3498,9 +3621,9 @@ public class UiUtil implements Opcodes {
             );
             mv.visitCode();
 
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
             mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
 
             mv.visitMethodInsn(
@@ -3530,9 +3653,9 @@ public class UiUtil implements Opcodes {
             );
             mv.visitCode();
 
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
             mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
 
             mv.visitMethodInsn(
@@ -3562,9 +3685,9 @@ public class UiUtil implements Opcodes {
             );
             mv.visitCode();
 
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
             mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
 
             mv.visitMethodInsn(
@@ -3594,9 +3717,9 @@ public class UiUtil implements Opcodes {
             );
             mv.visitCode();
 
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
             mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
 
             mv.visitMethodInsn(
@@ -3626,9 +3749,9 @@ public class UiUtil implements Opcodes {
             );
             mv.visitCode();
 
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
             mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
             mv.visitVarInsn(FLOAD, 3);
 
@@ -3659,9 +3782,9 @@ public class UiUtil implements Opcodes {
             );
             mv.visitCode();
 
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
             mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
             mv.visitVarInsn(FLOAD, 3);
 
@@ -3692,9 +3815,9 @@ public class UiUtil implements Opcodes {
             );
             mv.visitCode();
 
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
             mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
             mv.visitVarInsn(FLOAD, 3);
 
@@ -3725,9 +3848,9 @@ public class UiUtil implements Opcodes {
             );
             mv.visitCode();
 
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
             mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, addTooltipUiComponentInternalName);
+            mv.visitVarInsn(ALOAD, 2);
             mv.visitTypeInsn(CHECKCAST, standardTooltipV2InternalName);
             mv.visitVarInsn(FLOAD, 3);
 
@@ -3849,6 +3972,14 @@ public class UiUtil implements Opcodes {
                 runAfter.run();
             }
         }.getProxy());
+    }
+
+    public static List<ButtonAPI> getButtonChildren(UIPanelAPI parent) {
+        List<ButtonAPI> result = new ArrayList<>();
+        for (UIComponentAPI child : utils.getChildrenNonCopy(parent)) {
+            if (child instanceof ButtonAPI btn) result.add(btn);
+        }
+        return result;
     }
 
     public static List<UIComponentAPI> getChildrenRecursive(UIComponentAPI parentPanel) {
@@ -4095,6 +4226,34 @@ public class UiUtil implements Opcodes {
         }, 0);
 
         return Class.forName(names[0].replace("/", ".").substring(1, names[0].length() - 1));
+    }
+
+    private static Class<?> getWeaponPickerListClass(Class<?> listPanelClass) throws ClassNotFoundException {
+        final Class<?>[] cls = {null};
+        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(com.fs.starfarer.coreui.refit.FighterPickerDialog.class));
+
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
+                if (!name.equals("updateUI")) return null;
+
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitTypeInsn(int opcode, String type) {
+                        if (opcode == NEW && cls[0] == null) {
+                            try {
+                                Class<?> clazz = Class.forName(type.replace("/", "."));
+                                if (listPanelClass != clazz) cls[0] = clazz;
+
+                            } catch (ClassNotFoundException ignored) {}
+                        }
+                    }
+                };
+            }
+        }, 0);
+
+        return cls[0];
     }
 
     public static void init() {} // called to load this class and generate the interface class in onApplicationLoad
