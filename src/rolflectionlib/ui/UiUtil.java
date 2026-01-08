@@ -27,6 +27,7 @@ import com.fs.graphics.Sprite;
 import com.fs.graphics.util.Fader;
 
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
+import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.OptionPanelAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
@@ -345,7 +346,7 @@ public class UiUtil implements Opcodes {
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
                 titleScreenStateInternalName,
-                "getCoreUI",
+                "getScreenPanel",
                 "()" + uiPanelClassDesc,
                 false
             );
@@ -3764,6 +3765,7 @@ public class UiUtil implements Opcodes {
     public static final Class<?> dialogDismissedInterface;
 
     public static final VarHandle listPanelMapVarHandle;
+    public static final VarHandle customPanelPluginVarHandle;
 
     private static final CallSite dialogDismissedCallSite;
     private static final CallSite actionPerformedCallSite;
@@ -3773,6 +3775,7 @@ public class UiUtil implements Opcodes {
 
             Class<?>[] result = implementUiUtilInterface();
             utils = (UiUtilInterface) RolfLectionUtil.instantiateClass(result[0].getConstructors()[0]);
+
             uiPanelClass = result[1];
             uiComponentClass = result[2];
             confirmDialogClass = result[3];
@@ -3785,6 +3788,13 @@ public class UiUtil implements Opcodes {
                 listPanelClass,
                 RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(listPanelClass, Map.class)),
                 Map.class
+            );
+
+            Class<?> customPanelClass = getCustomPanelClass();
+            customPanelPluginVarHandle = MethodHandles.privateLookupIn(customPanelClass, lookup).findVarHandle(
+                customPanelClass,
+                RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByInterface(CustomUIPanelPlugin.class, customPanelClass)),
+                CustomUIPanelPlugin.class
             );
             
             {
@@ -4057,6 +4067,34 @@ public class UiUtil implements Opcodes {
         }, 0);
 
         return foundNames;
+    }
+
+    private static Class<?> getCustomPanelClass() throws ClassNotFoundException {
+        final String[] names = {null};
+        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(EventsPanel.class));
+
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
+                if (!name.equals("<init>")) return null;
+
+                return new MethodVisitor(Opcodes.ASM9) {
+                    private int putFields = 0;
+
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
+                        if (opcode == Opcodes.PUTFIELD) putFields+= 1;
+
+                        if (putFields == 4) {
+                            names[0] = fldDesc;
+                        }
+                    }
+                };
+            }
+        }, 0);
+
+        return Class.forName(names[0].replace("/", ".").substring(1, names[0].length() - 1));
     }
 
     public static void init() {} // called to load this class and generate the interface class in onApplicationLoad
