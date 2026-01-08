@@ -76,10 +76,10 @@ public class UiUtil implements Opcodes {
 
         public void buttonSetListener(Object button, Object listener);
         public Object buttonGetListener(Object button);
-        public Object buttonGetRendererPanel(Object button); // TODO
-        public Object buttonGetRendererCheckbox(Object button); // TODO
+        public Object buttonGetRendererPanel(Object button);
+        public Object buttonGetRendererCheckbox(Object button);
 
-        public void labelAutosize(Object label); // TODO
+        public PositionAPI labelAutoSize(Object label);
         
         public Fader uiComponentGetFader(Object uiComponent);
         public void uiComponentSetFader(Object uiComponent, Fader fader);
@@ -102,8 +102,8 @@ public class UiUtil implements Opcodes {
         public boolean isEnabled (Object uiComponent);
         public boolean setEnabled(Object uiComponent, boolean enabled);
 
-        public float getOpacity(Object uiComponent); // TODO
-        public void setOpacity(Object uiComponent, float opacity); // TODO
+        public float getOpacity(Object uiComponent);
+        public void setOpacity(Object uiComponent, float opacity);
         public void setMouseOverPad(Object uiComponent, float pad1, float pad2, float pad3, float pad4);
         public Fader getMouseoverHighlightFader(Object uiComponent);
 
@@ -126,8 +126,8 @@ public class UiUtil implements Opcodes {
         public Map<ButtonAPI, Object> optionPanelGetButtonToItemMap(OptionPanelAPI optionPanel);
         public Object optionPanelItemGetOptionData(Object optionItem);
         public List<UIComponentAPI> listPanelGetItems(Object listPanel); // custom method with instanceof check listPanelClass else return null
-        public void listPanelAdditem(Object listPanel, Object toAdd); // TODO
-        public void listPanelClear(Object listPanel); // TODO
+        public void listPanelAdditem(Object listPanel, UIComponentAPI toAdd);
+        public void listPanelClear(Object listPanel);
 
         public List<Object> uiTablegetRows(UITable table);
         public void uiTableAddRow(UITable table, Object row);
@@ -189,10 +189,13 @@ public class UiUtil implements Opcodes {
         Class<?> toolTipClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getTooltip", uiComponentClass));
         Class<?> interactionDialogClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("encounterDialog", CampaignState.class));
         Class<?> buttonClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByInterface(ButtonAPI.class, EventsPanel.class));
+        Class<?> buttonRendererPanelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getRendererPanel", buttonClass));
         Class<?> actionPerformedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListener", buttonClass));
         Class<?> confirmDialogClass = AdminPickerDialog.class.getSuperclass();
         Class<?> listPanelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListAdmins", AdminPickerDialog.class));
+        Class<?> uiComponentInterfaceA = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("addItem", listPanelClass))[0];
         Class<?> dialogDismissedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getDelegate", confirmDialogClass.getSuperclass()));
+        Class<?> labelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getLabel", confirmDialogClass));
         Class<?> uiTableRowClass = RolfLectionUtil.getReturnType((RolfLectionUtil.getMethod("getSelected", UITable.class)));
         Class<?> inputEventClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("buttonPressed", buttonClass))[0];
         Class<?> imagePanelClass = getImagePanelClass();
@@ -226,6 +229,7 @@ public class UiUtil implements Opcodes {
             }
         }
 
+        String uiComponentInterfaceADesc = Type.getDescriptor(uiComponentInterfaceA);
         String titleScreenStateInternalName = Type.getInternalName(TitleScreenState.class);
         String coreClassInternalName = Type.getInternalName(coreClass);
         String uiPanelInternalName = Type.getInternalName(uiPanelClass);
@@ -235,7 +239,9 @@ public class UiUtil implements Opcodes {
         String optionPanelInternalName = Type.getInternalName(optionPanelClass);
         String optionPanelItemInternalName = Type.getInternalName(optionPanelItemClass);
         String buttonClassInternalName = Type.getInternalName(buttonClass);
+        String buttonRendererPanelInternalName = Type.getInternalName(buttonRendererPanelClass);
         String actionPerformedInterfaceInternalName = Type.getInternalName(actionPerformedInterface);
+        String labelInternalName = Type.getInternalName(labelClass);
         String campaignStateInternalName = Type.getInternalName(CampaignState.class);
         String confirmDialogInternalName = Type.getInternalName(confirmDialogClass);
         String listPanelInternalName = Type.getInternalName(listPanelClass);
@@ -263,6 +269,7 @@ public class UiUtil implements Opcodes {
         String uiComponentApiDesc = Type.getDescriptor(UIComponentAPI.class);
         String buttonAPIDesc = Type.getDescriptor(ButtonAPI.class);
         String buttonClassDesc = Type.getDescriptor(buttonClass);
+        String buttonRendererPanelDesc = Type.getDescriptor(buttonRendererPanelClass);
         String actionListenerInterfaceDesc = Type.getDescriptor(actionPerformedInterface);
         String tooltipDesc = Type.getDescriptor(toolTipClass);
         String labelAPIDesc = Type.getDescriptor(LabelAPI.class);
@@ -285,6 +292,8 @@ public class UiUtil implements Opcodes {
         String sectorEntityTokenDesc = Type.getDescriptor(SectorEntityToken.class);
         String eventsPanelDesc = Type.getDescriptor(EventsPanel.class);
         String baseLocationDesc = Type.getDescriptor(BaseLocation.class);
+        String faderDesc = Type.getDescriptor(Fader.class);
+        String labelDesc = Type.getDescriptor(labelClass);
 
         // String addTooltipMethodDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class));
 
@@ -928,7 +937,6 @@ public class UiUtil implements Opcodes {
         //     return ((courseWidgetClass)courseWidget).getFader();
         // }
         {
-            String faderDesc = Type.getDescriptor(Fader.class);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "getInner",
@@ -1018,6 +1026,39 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public PositionAPI labelAutoSize(Object label) {
+        //     return ((labelClass)label).autoSize();
+        // }
+        {
+            {
+                MethodVisitor mv = cw.visitMethod(
+                    ACC_PUBLIC,
+                    "labelAutoSize",
+                    "(Ljava/lang/Object;)V",
+                    null,
+                    null
+                );
+                mv.visitCode();
+    
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitTypeInsn(CHECKCAST, labelInternalName);
+    
+                mv.visitVarInsn(ALOAD, 2);
+                mv.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    labelInternalName,
+                    "autoSize",
+                    "()" + positionClassDesc,
+                    false
+                );
+    
+                mv.visitInsn(ARETURN);
+    
+                mv.visitMaxs(0, 0);
+                mv.visitEnd();
+            }
+        }
+
         // public void buttonSetListener(Object button, Object listener) {
         //     ((buttonClass)button).setListener(listener);
         // }
@@ -1074,6 +1115,68 @@ public class UiUtil implements Opcodes {
             );
 
             mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Object buttonGetRendererPanel(Object button) {
+        //     ((buttonClass)button).getRendererPanel();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "buttonGetRendererPanel",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, buttonClassInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                buttonClassInternalName,
+                "getRendererPanel",
+                "()" + buttonRendererPanelDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void buttonSetRendererPanel(Object button, Object rendererPanel) {
+        //     ((buttonClass)button).setRendererPanel((rendererPanelClass)rendererPanel);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "buttonGetListener",
+                "(Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, buttonClassInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitTypeInsn(CHECKCAST, buttonRendererPanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                buttonClassInternalName,
+                "setRendererPanel",
+                "(" + buttonRendererPanelDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -1613,12 +1716,72 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public float getOpacity(Object uiComponent) {
+        //     return ((uiComponentClass)uiComponent).getOpacity();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "getOpacity",
+                "(Ljava/lang/Object;)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiComponentInternalName,
+                "getOpacity",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void setOpacity(Object uiComponent, float opacity) {
+        //     ((uiComponentClass)uiComponent).setOpacity(opacity);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "setOpacity",
+                "(Ljava/lang/Object;F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                uiComponentInternalName,
+                "setOpacity",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
         // public void setMouseOverPad(Object uiComponent, float pad1, float pad2, float pad3, float pad4) {
         //     ((uiComponentClass)uiComponent).setMouseOverPad(pad1, pad2, pad3, pad4);
         // }
         {
-            Object setMouseOverPadMethod = RolfLectionUtil.getMethod("setMouseOverPad", uiComponentClass, 4);
-            String setMouseOverPadDesc = Type.getMethodDescriptor(setMouseOverPadMethod);
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "setMouseOverPad",
@@ -1639,7 +1802,7 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 uiComponentInternalName,
                 "setMouseOverPad",
-                setMouseOverPadDesc,
+                "(FFFF)V",
                 false
             );
 
@@ -1652,10 +1815,7 @@ public class UiUtil implements Opcodes {
         // public Fader getMouseoverHighlightFader(Object uiComponent) {
         //     return ((uiComponentClass)uiComponent).getMouseoverHighlightFader();
         // }
-        {
-            Object getMouseoverHighlightFaderMethod = RolfLectionUtil.getMethod("getMouseoverHighlightFader", uiComponentClass);
-            String getMouseoverHighlightFaderDesc = Type.getMethodDescriptor(getMouseoverHighlightFaderMethod);
-            String faderDesc = Type.getDescriptor(Fader.class);
+        {           
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "getMouseoverHighlightFader",
@@ -1672,7 +1832,7 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 uiComponentInternalName,
                 "getMouseoverHighlightFader",
-                getMouseoverHighlightFaderDesc,
+                "()" + faderDesc,
                 false
             );
 
@@ -1975,7 +2135,6 @@ public class UiUtil implements Opcodes {
         //     return ((confirmDialogClass)confirmDialog).getLabel();
         // }
         {
-            String labelDesc = Type.getDescriptor(RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getLabel", confirmDialogClass)));
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "confirmDialogGetLabel",
@@ -2239,6 +2398,67 @@ public class UiUtil implements Opcodes {
             );
 
             mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void listPanelAddItem(Object listPanel, UIComponentAPI item) {
+        //     ((listPanelClass)listPanel).addItem(item);
+        // }
+        {   
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "listPanelAddItem",
+                "(Ljava/lang/Object;" + uiComponentApiDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, listPanelInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                listPanelInternalName,
+                "addItem",
+                "(" + uiComponentInterfaceADesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void listPanelClear(Object listPanel) {
+        //     ((listPanelClass)listPanel).clear();
+        // }
+        {   
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "listPanelclear",
+                "(Ljava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, listPanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                listPanelInternalName,
+                "clear",
+                "()V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
