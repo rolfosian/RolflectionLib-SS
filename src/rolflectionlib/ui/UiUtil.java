@@ -2009,14 +2009,14 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public List<UIComponentAPI> getChildrenCopy(Object uiPanel) {
+        // public List<UIComponentAPI> getChildrenCopy(UIPanelAPI uiPanel) {
         //     return ((uiPanelClass)uiPanel).getChildrenCopy();
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "getChildrenCopy",
-                "(Ljava/lang/Object;)Ljava/util/List;",
+                "(" + uiPanelAPIDesc + ";)Ljava/util/List;",
                 null,
                 null
             );
