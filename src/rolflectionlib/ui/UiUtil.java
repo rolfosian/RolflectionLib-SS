@@ -153,20 +153,19 @@ public class UiUtil implements Opcodes {
         public void imagePanelAutoSizeToHeight(Object imagePanel, float height);
         public void imagePanelSetStretch(Object imagePanel, boolean stretch);
         public Sprite imagePanelGetSprite(Object imagePanel);
-        public void imagePanelSetSprite(Object imagePanel, Sprite sprite); // TODO add boolean
+        public void imagePanelSetSprite(Object imagePanel, Sprite sprite, boolean isResize);
         public String imagePanelGetSpriteName(Object imagePanel);
-        public void imagePanelSetSprite(Object imagePanel, String spriteName); // TODO add boolean
+        public void imagePanelSetSprite(Object imagePanel, String spriteName, boolean isResize);
         public Color imagePanelGetBorderColor(Object imagePanel);
         public void imagePanelSetBorderColor(Object imagePanel, Color borderColor);
-        public boolean imagePanelIsWithOutline(Object imagePanel); // TODO
-        public void imagePanelSetIsWithOutline(Object imagePanel, boolean isWithOutline); // TODO
-        public boolean imagePanelIsTexClamp(Object imagePanel); // TODO
-        public void imagePanelSetTexClamp(Object imagePanel, boolean texClamp); // TODO
-        public boolean imagePanelIsForceNoRounding(Object imagePanel); // TODO
-        public boolean imagePanelSetForceNoRounding(Object imagePanel, boolean forceNoRounding); // TODO
-        public float imagePanelGetOriginalAR(Object imagePanel); // TODO
+        public boolean imagePanelIsWithOutline(Object imagePanel);
+        public void imagePanelSetWithOutline(Object imagePanel, boolean isWithOutline);
+        public boolean imagePanelIsTexClamp(Object imagePanel);
+        public void imagePanelSetTexClamp(Object imagePanel, boolean texClamp);
+        public boolean imagePanelIsForceNoRounding(Object imagePanel);
+        public boolean imagePanelSetForceNoRounding(Object imagePanel, boolean forceNoRounding);
+        public float imagePanelGetOriginalAR(Object imagePanel);
 
-        
         public PositionAPI positionRelativeTo(PositionAPI position, PositionAPI targetRelativePosition, float var2, float var3, float var4, float var5, float var6, float var7);
         public float positionGetXAlignOffset(PositionAPI position);
         public float positionGetYAlignOffset(PositionAPI position);
@@ -3078,14 +3077,14 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public void imagePanelSetSprite(Object imagePanel, Sprite sprite) {
-        //     ((imagePanelClass)imagePanel).setSprite(sprite);
+        // public void imagePanelSetSprite(Object imagePanel, Sprite sprite, boolean isResize) {
+        //     ((imagePanelClass)imagePanel).setSprite(sprite, isResize);
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "imagePanelSetSprite",
-                "(Ljava/lang/Object;" + spriteDesc + ")V",
+                "(Ljava/lang/Object;" + spriteDesc + "Z)V",
                 null,
                 null
             );
@@ -3094,12 +3093,13 @@ public class UiUtil implements Opcodes {
             mv.visitVarInsn(ALOAD, 1);
             mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
             mv.visitVarInsn(ALOAD, 2);
+            mv.visitVarInsn(ILOAD, 3);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
                 imagePanelInternalName,
                 "setSprite",
-                "(" + spriteDesc + ")V",
+                "(" + spriteDesc + "Z)V",
                 false
             );
 
@@ -3139,14 +3139,14 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public void imagePanelSetSprite(Object imagePanel, String spriteName) {
-        //     ((imagePanelClass)imagePanel).setSprite(spriteName);
+        // public void imagePanelSetSprite(Object imagePanel, String spriteName, boolean isResize) {
+        //     ((imagePanelClass)imagePanel).setSprite(spriteName, isResize);
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "imagePanelSetSprite",
-                "(Ljava/lang/Object;" + stringDesc + ")V",
+                "(Ljava/lang/Object;" + stringDesc + "Z)V",
                 null,
                 null
             );
@@ -3155,12 +3155,13 @@ public class UiUtil implements Opcodes {
             mv.visitVarInsn(ALOAD, 1);
             mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
             mv.visitVarInsn(ALOAD, 2);
+            mv.visitVarInsn(ILOAD, 3);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
                 imagePanelInternalName,
                 "setSprite",
-                "(" + stringDesc + ")V",
+                "(" + stringDesc + "Z)V",
                 false
             );
 
@@ -3230,6 +3231,220 @@ public class UiUtil implements Opcodes {
             mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
+
+        // public boolean imagePanelIsWithOutline(Object imagePanel) {
+        //     return ((imagePanelClass)imagePanel).isWithOutline();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelIsWithOutline",
+                "(Ljava/lang/Object;)Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "isWithOutline",
+                "()Z",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelSetWithOutline(Object imagePanel, boolean isWithOutline) {
+        //     ((imagePanelClass)imagePanel).setWithOutline(isWithOutline);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelSetWithOutline",
+                "(Ljava/lang/Object;Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "setWithOutline",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public boolean imagePanelIsTexClamp(Object imagePanel) {
+        //     return ((imagePanelClass)imagePanel).isTexClamp();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelIsTexClamp",
+                "(Ljava/lang/Object;)Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "isTexClamp",
+                "()Z",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelSetTexClamp(Object imagePanel, boolean texClamp) {
+        //     ((imagePanelClass)imagePanel).setTexClamp(texClamp);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelSetTexClamp",
+                "(Ljava/lang/Object;Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "setTexClamp",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public boolean imagePanelIsForceNoRounding(Object imagePanel) {
+        //     return ((imagePanelClass)imagePanel).isForceNoRounding();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelIsForceNoRounding",
+                "(Ljava/lang/Object;)Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "isForceNoRounding",
+                "()Z",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void imagePanelSetForceNoRounding(Object imagePanel, boolean forceNoRounding) {
+        //     return ((imagePanelClass)imagePanel).setForceNoRounding(forceNoRounding);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelSetForceNoRounding",
+                "(Ljava/lang/Object;Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "setForceNoRounding",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float imagePanelGetOriginalAR(Object imagePanel) {
+        //     return ((imagePanelClass)imagePanel).getOriginalAR();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "imagePanelGetOriginalAR",
+                "(Ljava/lang/Object;)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, imagePanelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                imagePanelInternalName,
+                "getOriginalAR",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
 
         // public PositionAPI positionRelativeTo(PositionAPI position, PositionAPI targetRelativePos float var2, float var3, float var4, float var5, float var6, float var7) {
         //     return ((positionClass)position).relativeTo((positionClass)targetRelativePos, var2, var3, var4, var5, var6, var7);
