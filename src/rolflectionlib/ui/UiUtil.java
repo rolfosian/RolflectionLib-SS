@@ -81,6 +81,7 @@ public class UiUtil implements Opcodes {
         public Object buttonGetRendererCheckbox(Object button);
 
         public PositionAPI labelAutoSize(Object label);
+        public UIPanelAPI labelGetParent(Object label);
         
         public Fader uiComponentGetFader(Object uiComponent);
         public void uiComponentSetFader(Object uiComponent, Fader fader);
@@ -127,10 +128,10 @@ public class UiUtil implements Opcodes {
         public Map<ButtonAPI, Object> optionPanelGetButtonToItemMap(OptionPanelAPI optionPanel);
         public Object optionPanelItemGetOptionData(Object optionItem);
         public List<UIComponentAPI> listPanelGetItems(Object listPanel); // custom method with instanceof check listPanelClass else return null
-        public void listPanelAdditem(Object listPanel, UIComponentAPI toAdd);
+        public void listPanelAddItem(Object listPanel, UIComponentAPI toAdd);
         public void listPanelClear(Object listPanel);
 
-        public List<Object> uiTablegetRows(UITable table);
+        public List<Object> uiTableGetRows(UITable table);
         public void uiTableAddRow(UITable table, Object row);
         public void uiTableRemoveRow(UITable table, Object row);
         public Object uiTableGetRowForData(UITable table, Object data);
@@ -170,8 +171,8 @@ public class UiUtil implements Opcodes {
         public PositionAPI positionRelativeTo(PositionAPI position, PositionAPI targetRelativePosition, float var2, float var3, float var4, float var5, float var6, float var7);
         public float positionGetXAlignOffset(Object position);
         public float positionGetYAlignOffset(Object position);
-        public void positionSetXAlignOffset(Object position, float offset);
-        public void positionSetYAlignOffset(Object position, float offset);
+        public PositionAPI positionSetXAlignOffset(Object position, float offset);
+        public PositionAPI positionSetYAlignOffset(Object position, float offset);
 
         public void addTooltipAbove(Object tooltip, Object uiComponent);
         public void addTooltipBelow(Object tooltip, Object uiComponent);
@@ -1090,14 +1091,14 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public void positionSetXAlignOffset(Object position, float offset) {
+        // public PositionAPI positionSetXAlignOffset(Object position, float offset) {
         //     return ((positionClass)position).setXAlignOffset(offset);
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "positionSetXAlignOffset",
-                "(Ljava/lang/Object;F)V",
+                "(Ljava/lang/Object;F)" + positionAPIDesc,
                 null,
                 null
             );
@@ -1111,24 +1112,24 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 positionInternalName,
                 "setXAlignOffset",
-                "(F)V",
+                "(F)" + positionClassDesc,
                 false
             );
 
-            mv.visitInsn(RETURN);
+            mv.visitInsn(ARETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
 
-        // public void positionSetYAlignOffset(Object position, float offset) {
+        // public PositionAPI positionSetYAlignOffset(Object position, float offset) {
         //     return ((positionClass)position).getYAlignOffset(offset);
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "positionSetYAlignOffset",
-                "(Ljava/lang/Object;F)V",
+                "(Ljava/lang/Object;F)" + positionAPIDesc,
                 null,
                 null
             );
@@ -1142,11 +1143,11 @@ public class UiUtil implements Opcodes {
                 INVOKEVIRTUAL,
                 positionInternalName,
                 "setYAlignOffset",
-                "(F)V",
+                "(F)" + positionClassDesc,
                 false
             );
 
-            mv.visitInsn(RETURN);
+            mv.visitInsn(ARETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -1995,6 +1996,36 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public UIPanelAPI labelGetParent(Object label) {
+        //     return ((labelClass)label).getParent();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "labelGetParent",
+                "(Ljava/lang/Object;)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, labelInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                labelInternalName,
+                "getParent",
+                "()" + uiPanelClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
         // public UIPanelAPI getParent(Object uiComponent) {
         //     return ((uiComponentClass)uiComponent).getParent();
         // }
@@ -2587,13 +2618,13 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public List<Object> uiTablegetRows(UITable table) {
+        // public List<Object> uiTableGetRows(UITable table) {
         //     return table.getRows();
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
-                "uiTablegetRows",
+                "uiTableGetRows",
                 "(" + uiTableDesc + ")" + listDesc,
                 null,
                 null
