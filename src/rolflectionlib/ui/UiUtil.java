@@ -16,13 +16,15 @@ import com.fs.starfarer.campaign.BaseLocation;
 import com.fs.starfarer.campaign.CampaignState;
 import com.fs.starfarer.campaign.command.AdminPickerDialog;
 import com.fs.starfarer.campaign.comms.v2.EventsPanel;
-
+import com.fs.starfarer.ui.impl.CargoTooltipFactory;
 import com.fs.starfarer.ui.impl.StandardTooltipV2;
 import com.fs.starfarer.ui.impl.StandardTooltipV2Expandable;
 
 import com.fs.starfarer.campaign.ui.UITable;
+import com.fs.starfarer.coreui.refit.FighterPickerDialog;
 import com.fs.starfarer.coreui.refit.WeaponPickerDialog;
-
+import com.fs.starfarer.loading.specs.BaseWeaponSpec;
+import com.fs.starfarer.loading.specs.FighterWingSpec;
 import com.fs.graphics.Sprite;
 import com.fs.graphics.util.Fader;
 
@@ -123,7 +125,7 @@ public class UiUtil implements Opcodes {
         public boolean isNoiseOnConfirmDismiss(Object confirmDialog);
         public void confirmDialogShow(Object confirmDialog, float durationIn, float durationOut);
         public UIPanelAPI confirmDialogGetInnerPanel(Object confirmDialog); // custom method with instanceof check confirmDialog superclass else return null
-        public Object confirmDialogGetHolo(Object confirmDialog);
+        public UIComponentAPI confirmDialogGetHolo(Object confirmDialog);
 
         public Map<ButtonAPI, Object> optionPanelGetButtonToItemMap(OptionPanelAPI optionPanel);
         public Object optionPanelItemGetOptionData(Object optionItem);
@@ -195,6 +197,7 @@ public class UiUtil implements Opcodes {
         Class<?> buttonRendererPanelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getRendererPanel", buttonClass));
         Class<?> actionPerformedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListener", buttonClass));
         Class<?> confirmDialogClass = AdminPickerDialog.class.getSuperclass();
+        Class<?> confirmDialogHoloClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getHolo", confirmDialogClass));
         Class<?> listPanelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getListAdmins", AdminPickerDialog.class));
         Class<?> uiComponentInterfaceA = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("addItem", listPanelClass))[0];
         Class<?> dialogDismissedInterface = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getDelegate", confirmDialogClass.getSuperclass()));
@@ -264,6 +267,7 @@ public class UiUtil implements Opcodes {
         String mapClassInternalName = Type.getInternalName(mapClass);
         String intelTabInternalName = Type.getInternalName(intelTabClass);
         String zoomTrackerClassInternalName = Type.getInternalName(zoomTrackerClass);
+        String confirmDialogHoloInternalName = Type.getInternalName(confirmDialogHoloClass);
 
         String titleScreenStateDesc = Type.getDescriptor(TitleScreenState.class);
         String coreClassDesc = Type.getDescriptor(coreClass);
@@ -299,6 +303,7 @@ public class UiUtil implements Opcodes {
         String faderDesc = Type.getDescriptor(Fader.class);
         String labelDesc = Type.getDescriptor(labelClass);
         String zoomTrackerDesc = Type.getDescriptor(zoomTrackerClass);
+        String confirmDialogHoloDesc = Type.getDescriptor(confirmDialogHoloClass);
 
         // String addTooltipMethodDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class));
 
@@ -2170,7 +2175,7 @@ public class UiUtil implements Opcodes {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "getChildrenCopy",
-                "(" + uiPanelAPIDesc + ";)Ljava/util/List;",
+                "(" + uiPanelAPIDesc + ")Ljava/util/List;",
                 null,
                 null
             );
@@ -2249,6 +2254,36 @@ public class UiUtil implements Opcodes {
             );
 
             mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIComponentAPI confirmDialogGetHolo(Object confirmDialog) {
+        //     return ((confirmDialogClass)confirmDialog).getHolo();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "confirmDialogGetHolo",
+                "(Ljava/lang/Object;)" + uiComponentApiDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                confirmDialogInternalName,
+                "getHolo",
+                "()" + confirmDialogHoloDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -2413,36 +2448,6 @@ public class UiUtil implements Opcodes {
                 confirmDialogInternalName,
                 "getInnerPanel",
                 "()" + uiPanelClassDesc,
-                false
-            );
-
-            mv.visitInsn(ARETURN);
-
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-        }
-
-        // public Object confirmDialogGetHolo(Object confirmDialog) {
-        //     return ((confirmDialogClass)confirmDialog).getHolo();
-        // }
-        {
-            MethodVisitor mv = cw.visitMethod(
-                ACC_PUBLIC,
-                "confirmDialogGetHolo",
-                "(Ljava/lang/Object;)Ljava/lang/Object;",
-                null,
-                null
-            );
-            mv.visitCode();
-
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, confirmDialogInternalName);
-
-            mv.visitMethodInsn(
-                INVOKEVIRTUAL,
-                confirmDialogInternalName,
-                "getHolo",
-                "()" + Type.getDescriptor(RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getHolo", confirmDialogClass))),
                 false
             );
 
@@ -3915,18 +3920,26 @@ public class UiUtil implements Opcodes {
     public static final Class<?> uiPanelClass;
     public static final Class<?> uiComponentClass;
     public static final Class<?> confirmDialogClass;
+
     public static final Class<?> actionPerformedInterface;
     public static final Class<?> dialogDismissedInterface;
 
+    public static final Class<?> weaponPickerListClass;
+
     public static final VarHandle listPanelMapVarHandle;
     public static final VarHandle customPanelPluginVarHandle;
+
+    public static final VarHandle fighterPickerHeightVarHandle;
+    public static final VarHandle weaponPickerHeightVarHandle;
+
+    public static final VarHandle tooltipFighterSpecVarHandle;
+    public static final VarHandle tooltipWeaponSpecVarHandle;
 
     private static final CallSite dialogDismissedCallSite;
     private static final CallSite actionPerformedCallSite;
 
     static {
         try {
-
             Class<?>[] result = implementUiUtilInterface();
             utils = (UiUtilInterface) RolfLectionUtil.instantiateClass(result[0].getConstructors()[0]);
 
@@ -3943,12 +3956,51 @@ public class UiUtil implements Opcodes {
                 RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(listPanelClass, Map.class)),
                 Map.class
             );
+            Object[] weaponPickerData = getWeaponPickerData(listPanelClass);
+            weaponPickerListClass = (Class<?>) weaponPickerData[0];
 
             Class<?> customPanelClass = getCustomPanelClass();
             customPanelPluginVarHandle = MethodHandles.privateLookupIn(customPanelClass, lookup).findVarHandle(
                 customPanelClass,
                 RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByInterface(CustomUIPanelPlugin.class, customPanelClass)),
                 CustomUIPanelPlugin.class
+            );
+
+            Class<?> fighterTooltipClass = null;
+            Class<?> weaponTooltipClass = null;
+            for (Class<?> cls : CargoTooltipFactory.class.getNestMembers()) {
+                if (cls.isAnonymousClass() && cls.getSuperclass() == StandardTooltipV2Expandable.class) {
+                    for (Class<?> paramType : RolfLectionUtil.getConstructorParamTypesSingleConstructor(cls)) {
+                        if (paramType == FighterWingSpec.class) {
+                            fighterTooltipClass = cls;
+                            break;
+                        } else if (paramType == BaseWeaponSpec.class) {
+                            weaponTooltipClass = cls;
+                            break;
+                        }
+                    }
+                }
+            }
+            tooltipFighterSpecVarHandle = MethodHandles.privateLookupIn(fighterTooltipClass, lookup).findVarHandle(
+                    fighterTooltipClass,
+                    RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(fighterTooltipClass, FighterWingSpec.class)),
+                    FighterWingSpec.class
+            );
+            tooltipWeaponSpecVarHandle = MethodHandles.privateLookupIn(weaponTooltipClass, lookup).findVarHandle(
+                    weaponTooltipClass,
+                    RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(weaponTooltipClass, BaseWeaponSpec.class)),
+                    BaseWeaponSpec.class
+            );
+
+            fighterPickerHeightVarHandle = MethodHandles.privateLookupIn(FighterPickerDialog.class, lookup).findVarHandle(
+                FighterPickerDialog.class,
+                (String)weaponPickerData[1],
+                float.class
+            );
+            weaponPickerHeightVarHandle = MethodHandles.privateLookupIn(WeaponPickerDialog.class, lookup).findVarHandle(
+                WeaponPickerDialog.class,
+                (String)weaponPickerData[2],
+                float.class
             );
             
             {
@@ -4092,10 +4144,9 @@ public class UiUtil implements Opcodes {
     }
 
     private static Class<?> getOptionPanelClass(Class<?> interactionDialogClass) {
-        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(interactionDialogClass));
         final String[] fieldName = {null};
 
-        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+        new ClassReader(RolFileUtil.getClassBytes(interactionDialogClass)).accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (!name.equals("getOptionPanel")) return null;
@@ -4115,10 +4166,9 @@ public class UiUtil implements Opcodes {
     }
 
     private static Class<?> getImagePanelClass() throws ClassNotFoundException {
-        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(StandardTooltipV2Expandable.class));
         final String[] className = {null};
 
-        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+        new ClassReader(RolFileUtil.getClassBytes(StandardTooltipV2Expandable.class)).accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (!name.equals("addImage") || !desc.split(";")[1].equals("FF)V")) return null;
@@ -4233,9 +4283,8 @@ public class UiUtil implements Opcodes {
 
     private static Class<?> getCustomPanelClass() throws ClassNotFoundException {
         final String[] names = {null};
-        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(EventsPanel.class));
 
-        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+        new ClassReader(RolFileUtil.getClassBytes(EventsPanel.class)).accept(new ClassVisitor(Opcodes.ASM9) {
 
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
@@ -4259,17 +4308,15 @@ public class UiUtil implements Opcodes {
         return Class.forName(names[0].replace("/", ".").substring(1, names[0].length() - 1));
     }
 
-    private static Class<?> getWeaponPickerListClass(Class<?> listPanelClass) throws ClassNotFoundException {
-        final Class<?>[] cls = {null};
-        ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(com.fs.starfarer.coreui.refit.FighterPickerDialog.class));
+    private static Object[] getWeaponPickerData(Class<?> listPanelClass) throws Exception {
+        final Class<?>[] cls = {null, null};
+        final String[] heightNames = {null, null};
 
-        cr.accept(new ClassVisitor(Opcodes.ASM9) {
-
+        new ClassReader(RolFileUtil.getClassBytes(FighterPickerDialog.class)).accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
-                if (!name.equals("updateUI")) return null;
-
-                return new MethodVisitor(Opcodes.ASM9) {
+                if (name.equals("updateUI"))
+                return new MethodVisitor(Opcodes.ASM9) {                    
                     @Override
                     public void visitTypeInsn(int opcode, String type) {
                         if (opcode == NEW && cls[0] == null) {
@@ -4281,10 +4328,94 @@ public class UiUtil implements Opcodes {
                         }
                     }
                 };
+                else return new MethodVisitor(Opcodes.ASM9) {
+                    private int fieldGets = 0;
+                    private int visitMethods = 0;
+                    private boolean aload = false;
+
+                    @Override
+                    public void visitVarInsn(int opcode, int index) {
+                        if (opcode == ALOAD) {
+                            if (index == 0) {
+                                aload = true;
+                            } else {
+                                aload = false;
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                        if (fieldGets == 0 && aload) {
+                            switch(name) {
+                                case "getHolo":
+                                case "getFanOut":
+                                case "getBrightness":
+                                    visitMethods++;
+                                default:
+                                    return;
+                            }
+                        }
+                        
+                    }
+
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
+                        if (opcode == Opcodes.GETFIELD) {
+                            fieldGets++;
+                            if (fieldGets == 1 && visitMethods == 3) {
+                                heightNames[0] = fld;
+                            }
+                        }
+                    }
+
+                };
             }
         }, 0);
 
-        return cls[0];
+        new ClassReader(RolFileUtil.getClassBytes(WeaponPickerDialog.class)).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
+                return new MethodVisitor(Opcodes.ASM9) {
+                    private int fieldGets = 0;
+                    private int visitMethods = 0;
+                    private int aloads = 0;
+
+                    @Override
+                    public void visitVarInsn(int opcode, int index) {
+                        if (opcode == ALOAD && index == 0) aloads++;
+                    }
+
+                    @Override
+                    public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                        if (fieldGets == 0 && aloads == 1) {
+                            switch(name) {
+                                case "getHolo":
+                                case "getFanOut":
+                                case "getBrightness":
+                                    visitMethods++;
+                                default:
+                                    return;
+                            }
+                        }
+                        
+                    }
+
+                    @Override
+                    public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
+                        if (opcode == Opcodes.GETFIELD) {
+                            fieldGets++;
+                            if (fieldGets == 1 && aloads == 2 && visitMethods == 3) {
+                                heightNames[1] = fld;
+                            }
+                        }
+                    }
+
+                };
+            }
+        }, 0);
+
+        return new Object[] {cls[0], heightNames[0], heightNames[1]}; 
     }
 
     public static void init() {} // called to load this class and generate the interface class in onApplicationLoad
