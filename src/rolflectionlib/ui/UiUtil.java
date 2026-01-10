@@ -37,6 +37,7 @@ import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
+import com.fs.starfarer.api.util.Pair;
 import com.fs.starfarer.api.ui.PositionAPI;
 
 import rolflectionlib.inheritor.Inherit;
@@ -50,7 +51,7 @@ public class UiUtil implements Opcodes {
 
         public UIPanelAPI campaignUIgetCore(Object campaignUI);
         public UIPanelAPI campaignUIgetScreenPanel(Object campaignUI);
-        public float campaignUIgetZoomFactor(Object campaignUI);
+        public float campaignUIgetFactor(Object campaignUI);
 
         public UIPanelAPI coreGetCurrentTab(Object core);
 
@@ -83,17 +84,22 @@ public class UiUtil implements Opcodes {
         public Object buttonGetRendererCheckbox(Object button);
 
         public PositionAPI labelAutoSize(Object label);
-        public UIPanelAPI labelGetParent(Object label);
+        public void labelSetTooltipOffsetFromCenter(Object label, float xPad, float yPad); // TODO // not to be confused with uiComponent method with same name (not an interface method)
+        public UIPanelAPI labelGetParent(Object label); // not to be confused with uiComponent method with same name (its not an interface method)
         
         public Fader uiComponentGetFader(Object uiComponent);
         public void uiComponentSetFader(Object uiComponent, Fader fader);
         public Object uiComponentGetTooltip(Object uiComponent);
-        public void uiComponentShowTooltip(Object uiComponent, Object tooltip);
-        public void uiComponentHideTooltip(Object uiComponent, Object tooltip);
-        public void setTooltipOffsetFromCenter(Object uiComponent, float xPad, float yPad);
-        public void setTooltipPositionRelativeToAnchor(Object uiComponent, float xPad, float yPad, Object anchor); // anchor should be instance of uicomponent
-        public UIComponentAPI getContents(Object tooltip);
 
+        public void setTooltip(Object uiComponent, Object tooltip); // TODO
+        public void setTooltipPositionRelativeToAnchor(Object uiComponent, float xPad, float yPad, Object anchor); // TODO // anchor should be instance of uicomponent
+
+        public void showTooltip(Object uiComponent, Object tooltip);
+        public void hideTooltip(Object uiComponent, Object tooltip);
+        public void uiComponentsetTooltipOffsetFromCenter(Object uiComponent, float xPad, float yPad); // TODO // not to be confused with label method with same name (its not an interface method)
+        
+        public UIComponentAPI getContents(Object tooltip);
+        
         public void setSlideData(Object uiComponent, float xOffset, float yOffset, float durationIn, float durationOut);
         public void slideIn(Object uiComponent);
         public void slideOut(Object uiComponent);
@@ -149,8 +155,6 @@ public class UiUtil implements Opcodes {
 
         public UIPanelAPI uiTableGetList(UITable table);
 
-        public void pickerDialogNotifyFilterChanged(Object pickerDialog);
-
         public void imagePanelSetRenderSchematic(Object imagePanel, boolean renderSchematic);
         public void imagePanelAutoSize(Object imagePanel);
         public void imagePanelAutoSizeToWidth(Object imagePanel, float width);
@@ -205,7 +209,7 @@ public class UiUtil implements Opcodes {
         Class<?> uiTableRowClass = RolfLectionUtil.getReturnType((RolfLectionUtil.getMethod("getSelected", UITable.class)));
         Class<?> inputEventClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("buttonPressed", buttonClass))[0];
         Class<?> imagePanelClass = getImagePanelClass();
-        Class<?> positionClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("setPos", uiComponentClass))[0];
+        Class<?> positionClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("add", listPanelClass));
         Class<?> addTooltipUiComponentClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class))[0];
         Class<?> courseWidgetClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCourseWidget", CampaignState.class));
         Class<?> messageDisplayClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("messageDisplay", CampaignState.class));
@@ -227,15 +231,21 @@ public class UiUtil implements Opcodes {
             }
         }
 
-        Class<?> pickerDialogFilterNotifyInterface = null;
-        for (Class<?> interfc : WeaponPickerDialog.class.getInterfaces()) {
-            if (RolfLectionUtil.getMethod("notifyFilterChanged", interfc) != null) {
-                pickerDialogFilterNotifyInterface = interfc;
-                break;
+        Class<?> showTooltipInterface = null;
+        Class<?> setTooltipInterface = null;
+        for (Class<?> interfc : uiComponentClass.getInterfaces()) {
+            for (Object method: interfc.getMethods()) {
+                switch(RolfLectionUtil.getMethodName(method)) {
+                    case "showTooltip":
+                        showTooltipInterface = interfc;
+                        continue;
+                    case "setTooltip":
+                        setTooltipInterface = interfc;
+                        continue;
+                }
             }
         }
 
-        String uiComponentInterfaceADesc = Type.getDescriptor(uiComponentInterfaceA);
         String titleScreenStateInternalName = Type.getInternalName(TitleScreenState.class);
         String coreClassInternalName = Type.getInternalName(coreClass);
         String uiPanelInternalName = Type.getInternalName(uiPanelClass);
@@ -254,7 +264,6 @@ public class UiUtil implements Opcodes {
         String uiTableInternalName = Type.getInternalName(UITable.class);
         String uiTableRowInternalName = Type.getInternalName(uiTableRowClass);
         String inputEventInternalName = Type.getInternalName(inputEventClass);
-        String pickerDialogFilterNotifyInterfaceInternalName = Type.getInternalName(pickerDialogFilterNotifyInterface);
         String imagePanelInternalName = Type.getInternalName(imagePanelClass);
         String spriteInternalName = Type.getInternalName(Sprite.class);
         String colorInternalName = Type.getInternalName(Color.class);
@@ -268,12 +277,16 @@ public class UiUtil implements Opcodes {
         String intelTabInternalName = Type.getInternalName(intelTabClass);
         String zoomTrackerClassInternalName = Type.getInternalName(zoomTrackerClass);
         String confirmDialogHoloInternalName = Type.getInternalName(confirmDialogHoloClass);
+        String showTooltipInterfaceInternalName = Type.getInternalName(showTooltipInterface);
+        String setTooltipInterfaceInternalName = Type.getInternalName(setTooltipInterface);
+        String uiComponentInterfaceAInternalName = Type.getInternalName(uiComponentInterfaceA);
 
         String titleScreenStateDesc = Type.getDescriptor(TitleScreenState.class);
         String coreClassDesc = Type.getDescriptor(coreClass);
         String uiPanelClassDesc = Type.getDescriptor(uiPanelClass);
         String uiPanelAPIDesc = Type.getDescriptor(UIPanelAPI.class);
         String uiComponentClassDesc = Type.getDescriptor(uiComponentClass);
+        String uiComponentInterfaceADesc = Type.getDescriptor(uiComponentInterfaceA);
         String uiComponentApiDesc = Type.getDescriptor(UIComponentAPI.class);
         String buttonAPIDesc = Type.getDescriptor(ButtonAPI.class);
         String buttonClassDesc = Type.getDescriptor(buttonClass);
@@ -481,7 +494,7 @@ public class UiUtil implements Opcodes {
                 false
             );
 
-            mv.visitInsn(ARETURN);
+            mv.visitInsn(FRETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -1341,13 +1354,13 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public Object uiComponentShowTooltip(Object uiComponent, Object tooltip) {
-        //     ((uiComponentClass)uiComponent).showTooltip();
+        // public void showTooltip(Object uiComponent, Object tooltip) {
+        //     ((showToolTipInterface)uiComponent).showTooltip(tooltip);
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
-                "uiComponentShowTooltip",
+                "showTooltip",
                 "(Ljava/lang/Object;Ljava/lang/Object;)V",
                 null,
                 null
@@ -1355,15 +1368,15 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitTypeInsn(CHECKCAST, showTooltipInterfaceInternalName);
 
             mv.visitVarInsn(ALOAD, 2);
             mv.visitMethodInsn(
-                INVOKEVIRTUAL,
-                uiComponentInternalName,
+                INVOKEINTERFACE,
+                showTooltipInterfaceInternalName,
                 "showTooltip",
                 "(Ljava/lang/Object;)V",
-                false
+                true // interface method
             );
 
             mv.visitInsn(RETURN);
@@ -1372,13 +1385,13 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public Object uiComponentHideTooltip(Object button, Object tooltip) {
-        //     ((uiComponentClass)uiComponent).hideTooltip();
+        // public void hideTooltip(Object uiComponent, Object tooltip) {
+        //     ((showToolTipInterface)uiComponent).hideTooltip(tooltip);
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
-                "uiComponentHideTooltip",
+                "hideTooltip",
                 "(Ljava/lang/Object;Ljava/lang/Object;)V",
                 null,
                 null
@@ -1386,15 +1399,15 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitTypeInsn(CHECKCAST, showTooltipInterfaceInternalName);
 
             mv.visitVarInsn(ALOAD, 2);
             mv.visitMethodInsn(
-                INVOKEVIRTUAL,
-                uiComponentInternalName,
+                INVOKEINTERFACE,
+                showTooltipInterfaceInternalName,
                 "hideTooltip",
                 "(Ljava/lang/Object;)V",
-                false
+                true // interface method
             );
 
             mv.visitInsn(RETURN);
@@ -1436,7 +1449,7 @@ public class UiUtil implements Opcodes {
         }
 
         // public void setTooltipPositionRelativeToAnchor(Object uiComponent, float xPad, float yPad, Object anchor) {
-        //     ((uiComponentClass)uiComponent).setTooltipPositionRelativeToAnchor(xPad, yPad, (uiComponentClass)anchor);
+        //     ((setTooltipInterface)uiComponent).setTooltipPositionRelativeToAnchor(xPad, yPad, (uiComponentClass)anchor);
         // }
         {
             MethodVisitor mv = cw.visitMethod(
@@ -1449,18 +1462,18 @@ public class UiUtil implements Opcodes {
             mv.visitCode();
 
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitTypeInsn(CHECKCAST, setTooltipInterfaceInternalName);
             mv.visitVarInsn(FLOAD, 2);
             mv.visitVarInsn(FLOAD, 3);
             mv.visitVarInsn(ALOAD, 4);
-            mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
+            mv.visitTypeInsn(CHECKCAST, uiComponentInterfaceAInternalName);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
-                uiComponentInternalName,
+                setTooltipInterfaceInternalName,
                 "setTooltipPositionRelativeToAnchor",
-                "(FF" + uiComponentClassDesc + ")V",
-                false
+                "(FF" + uiComponentInterfaceADesc + ")V",
+                true // interface method
             );
 
             mv.visitInsn(RETURN);
@@ -3026,33 +3039,6 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        {
-            MethodVisitor mv = cw.visitMethod(
-                ACC_PUBLIC,
-                "pickerDialogNotifyFilterChanged",
-                "(Ljava/lang/Object;)V",
-                null,
-                null
-            );
-            mv.visitCode();
-
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, pickerDialogFilterNotifyInterfaceInternalName);
-            
-            mv.visitMethodInsn(
-                INVOKEINTERFACE,
-                pickerDialogFilterNotifyInterfaceInternalName,
-                "notifyFilterChanged",
-                "()V",
-                true // interface method
-            );
-
-            mv.visitInsn(RETURN);
-
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-        }
-
         // public void imagePanelSetRenderSchematic(Object imagePanel, boolean renderSchematic) {
         //     ((imagePanelClass)imagePanel).setRenderSchematic(renderSchematic);
         // }
@@ -3956,15 +3942,8 @@ public class UiUtil implements Opcodes {
                 RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(listPanelClass, Map.class)),
                 Map.class
             );
-            Object[] weaponPickerData = getWeaponPickerData(listPanelClass);
-            weaponPickerListClass = (Class<?>) weaponPickerData[0];
-
-            Class<?> customPanelClass = getCustomPanelClass();
-            customPanelPluginVarHandle = MethodHandles.privateLookupIn(customPanelClass, lookup).findVarHandle(
-                customPanelClass,
-                RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByInterface(CustomUIPanelPlugin.class, customPanelClass)),
-                CustomUIPanelPlugin.class
-            );
+            Pair<Class<?>, String[]> weaponPickerData = getWeaponPickerData(listPanelClass);
+            weaponPickerListClass = weaponPickerData.one;
 
             Class<?> fighterTooltipClass = null;
             Class<?> weaponTooltipClass = null;
@@ -3982,25 +3961,32 @@ public class UiUtil implements Opcodes {
                 }
             }
             tooltipFighterSpecVarHandle = MethodHandles.privateLookupIn(fighterTooltipClass, lookup).findVarHandle(
-                    fighterTooltipClass,
-                    RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(fighterTooltipClass, FighterWingSpec.class)),
-                    FighterWingSpec.class
+                fighterTooltipClass,
+                RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(fighterTooltipClass, FighterWingSpec.class)),
+                FighterWingSpec.class
             );
             tooltipWeaponSpecVarHandle = MethodHandles.privateLookupIn(weaponTooltipClass, lookup).findVarHandle(
-                    weaponTooltipClass,
-                    RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(weaponTooltipClass, BaseWeaponSpec.class)),
-                    BaseWeaponSpec.class
+                weaponTooltipClass,
+                RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(weaponTooltipClass, BaseWeaponSpec.class)),
+                BaseWeaponSpec.class
             );
 
             fighterPickerHeightVarHandle = MethodHandles.privateLookupIn(FighterPickerDialog.class, lookup).findVarHandle(
                 FighterPickerDialog.class,
-                (String)weaponPickerData[1],
+                weaponPickerData.two[0],
                 float.class
             );
             weaponPickerHeightVarHandle = MethodHandles.privateLookupIn(WeaponPickerDialog.class, lookup).findVarHandle(
                 WeaponPickerDialog.class,
-                (String)weaponPickerData[2],
+                weaponPickerData.two[1],
                 float.class
+            );
+
+            Class<?> customPanelClass = getCustomPanelClass();
+            customPanelPluginVarHandle = MethodHandles.privateLookupIn(customPanelClass, lookup).findVarHandle(
+                customPanelClass,
+                RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByInterface(CustomUIPanelPlugin.class, customPanelClass)),
+                CustomUIPanelPlugin.class
             );
             
             {
@@ -4307,16 +4293,16 @@ public class UiUtil implements Opcodes {
 
         return Class.forName(names[0].replace("/", ".").substring(1, names[0].length() - 1));
     }
-
-    private static Object[] getWeaponPickerData(Class<?> listPanelClass) throws Exception {
-        final Class<?>[] cls = {null, null};
+    
+    private static Pair<Class<?>, String[]> getWeaponPickerData(Class<?> listPanelClass) throws Exception {
+        final Class<?>[] cls = {null};
         final String[] heightNames = {null, null};
 
         new ClassReader(RolFileUtil.getClassBytes(FighterPickerDialog.class)).accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (name.equals("updateUI"))
-                return new MethodVisitor(Opcodes.ASM9) {                    
+                return new MethodVisitor(Opcodes.ASM9) {
                     @Override
                     public void visitTypeInsn(int opcode, String type) {
                         if (opcode == NEW && cls[0] == null) {
@@ -4415,7 +4401,7 @@ public class UiUtil implements Opcodes {
             }
         }, 0);
 
-        return new Object[] {cls[0], heightNames[0], heightNames[1]}; 
+        return new Pair<Class<?>, String[]>(cls[0], new String[] {heightNames[0], heightNames[1]}); 
     }
 
     public static void init() {} // called to load this class and generate the interface class in onApplicationLoad
