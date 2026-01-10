@@ -1298,8 +1298,8 @@ public class UiUtil implements Opcodes {
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
-                "buttonGetListener",
-                "(Ljava/lang/Object;)V",
+                "buttonSetRendererPanel",
+                "(Ljava/lang/Object;Ljava/lang/Object;)V",
                 null,
                 null
             );
@@ -1873,7 +1873,6 @@ public class UiUtil implements Opcodes {
 
             mv.visitVarInsn(ALOAD, 1);
             mv.visitTypeInsn(CHECKCAST, uiComponentInternalName);
-            mv.visitVarInsn(FLOAD, 2);
 
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
@@ -2074,7 +2073,7 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public UIPanelAPI setParent(Object uiComponent, Object toSet) {
+        // public void setParent(Object uiComponent, Object toSet) {
         //     return ((uiComponentClass)uiComponent).setParent((uiPanelClass)toSet);
         // }
         {
@@ -2101,7 +2100,7 @@ public class UiUtil implements Opcodes {
                 false
             );
 
-            mv.visitInsn(ARETURN);
+            mv.visitInsn(RETURN);
 
             mv.visitMaxs(0, 0);
             mv.visitEnd();
@@ -4132,15 +4131,15 @@ public class UiUtil implements Opcodes {
     private static Class<?> getOptionPanelClass(Class<?> interactionDialogClass) {
         final String[] fieldName = {null};
 
-        new ClassReader(RolFileUtil.getClassBytes(interactionDialogClass)).accept(new ClassVisitor(Opcodes.ASM9) {
+        new ClassReader(RolFileUtil.getClassBytes(interactionDialogClass)).accept(new ClassVisitor(ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (!name.equals("getOptionPanel")) return null;
 
-                return new MethodVisitor(Opcodes.ASM9) {
+                return new MethodVisitor(ASM9) {
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
-                        if (opcode == Opcodes.GETFIELD) {
+                        if (opcode == GETFIELD) {
                             fieldName[0] = fld;
                         }
                     }
@@ -4154,12 +4153,12 @@ public class UiUtil implements Opcodes {
     private static Class<?> getImagePanelClass() throws ClassNotFoundException {
         final String[] className = {null};
 
-        new ClassReader(RolFileUtil.getClassBytes(StandardTooltipV2Expandable.class)).accept(new ClassVisitor(Opcodes.ASM9) {
+        new ClassReader(RolFileUtil.getClassBytes(StandardTooltipV2Expandable.class)).accept(new ClassVisitor(ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (!name.equals("addImage") || !desc.split(";")[1].equals("FF)V")) return null;
 
-                return new MethodVisitor(Opcodes.ASM9) {
+                return new MethodVisitor(ASM9) {
                     @Override
                     public void visitTypeInsn(int opcode, String name) {
                         if (opcode == NEW) {
@@ -4178,12 +4177,12 @@ public class UiUtil implements Opcodes {
         final String[] maxZoomFactorFieldName = {null};
 
         ClassReader cr = new ClassReader(RolFileUtil.getClassBytes(zoomTrackerClass));
-        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+        cr.accept(new ClassVisitor(ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (!desc.equals("()F")) return null;
 
-                return new MethodVisitor(Opcodes.ASM9) {
+                return new MethodVisitor(ASM9) {
                     int fieldGets = 0;
                     int fcmps = 0;
                     int fReturns = 0;
@@ -4193,7 +4192,7 @@ public class UiUtil implements Opcodes {
     
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
-                        if (opcode == Opcodes.GETFIELD && fldDesc.equals("F")) {
+                        if (opcode == GETFIELD && fldDesc.equals("F")) {
                             fieldGets++;
                             lastFieldName = fld;
                         }
@@ -4201,13 +4200,13 @@ public class UiUtil implements Opcodes {
     
                     @Override
                     public void visitInsn(int opcode) {
-                        if (opcode == Opcodes.FCMPG || opcode == Opcodes.FCMPL) {
+                        if (opcode == FCMPG || opcode == FCMPL) {
                             fcmps++;
                             if (fcmps == 2) {
                                 secondCompareField = lastFieldName;
                             }
                         }
-                        if (opcode == Opcodes.FRETURN) {
+                        if (opcode == FRETURN) {
                             fReturns++;
                         }
                     }
@@ -4223,12 +4222,12 @@ public class UiUtil implements Opcodes {
             }
         }, 0);
 
-        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+        cr.accept(new ClassVisitor(ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (!desc.equals("()F") || access != ACC_PUBLIC) return null;
 
-                return new MethodVisitor(Opcodes.ASM9) {
+                return new MethodVisitor(ASM9) {
                     int fieldGets = 0;
                     int fReturns = 0;
                     int visitFieldInsns = 0;
@@ -4242,14 +4241,14 @@ public class UiUtil implements Opcodes {
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
                         visitFieldInsns++;
-                        if (opcode == Opcodes.GETFIELD && fldDesc.equals("F") && fld.equals(maxZoomFactorFieldName[0])) {
+                        if (opcode == GETFIELD && fldDesc.equals("F") && fld.equals(maxZoomFactorFieldName[0])) {
                             fieldGets++;
                         }
                     }
 
                     @Override
                     public void visitInsn(int opcode) {
-                        if (opcode == Opcodes.FRETURN) {
+                        if (opcode == FRETURN) {
                             fReturns++;
                         }
                     }
@@ -4270,18 +4269,18 @@ public class UiUtil implements Opcodes {
     private static Class<?> getCustomPanelClass() throws ClassNotFoundException {
         final String[] names = {null};
 
-        new ClassReader(RolFileUtil.getClassBytes(EventsPanel.class)).accept(new ClassVisitor(Opcodes.ASM9) {
+        new ClassReader(RolFileUtil.getClassBytes(EventsPanel.class)).accept(new ClassVisitor(ASM9) {
 
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (!name.equals("<init>")) return null;
 
-                return new MethodVisitor(Opcodes.ASM9) {
+                return new MethodVisitor(ASM9) {
                     private int putFields = 0;
 
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
-                        if (opcode == Opcodes.PUTFIELD) putFields+= 1;
+                        if (opcode == PUTFIELD) putFields+= 1;
 
                         if (putFields == 4) {
                             names[0] = fldDesc;
@@ -4298,11 +4297,11 @@ public class UiUtil implements Opcodes {
         final Class<?>[] cls = {null};
         final String[] heightNames = {null, null};
 
-        new ClassReader(RolFileUtil.getClassBytes(FighterPickerDialog.class)).accept(new ClassVisitor(Opcodes.ASM9) {
+        new ClassReader(RolFileUtil.getClassBytes(FighterPickerDialog.class)).accept(new ClassVisitor(ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
                 if (name.equals("updateUI"))
-                return new MethodVisitor(Opcodes.ASM9) {
+                return new MethodVisitor(ASM9) {
                     @Override
                     public void visitTypeInsn(int opcode, String type) {
                         if (opcode == NEW && cls[0] == null) {
@@ -4314,7 +4313,7 @@ public class UiUtil implements Opcodes {
                         }
                     }
                 };
-                else return new MethodVisitor(Opcodes.ASM9) {
+                else return new MethodVisitor(ASM9) {
                     private int fieldGets = 0;
                     private int visitMethods = 0;
                     private boolean aload = false;
@@ -4347,7 +4346,7 @@ public class UiUtil implements Opcodes {
 
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
-                        if (opcode == Opcodes.GETFIELD) {
+                        if (opcode == GETFIELD) {
                             fieldGets++;
                             if (fieldGets == 1 && visitMethods == 3) {
                                 heightNames[0] = fld;
@@ -4359,10 +4358,10 @@ public class UiUtil implements Opcodes {
             }
         }, 0);
 
-        new ClassReader(RolFileUtil.getClassBytes(WeaponPickerDialog.class)).accept(new ClassVisitor(Opcodes.ASM9) {
+        new ClassReader(RolFileUtil.getClassBytes(WeaponPickerDialog.class)).accept(new ClassVisitor(ASM9) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String sig, String[] ex) {
-                return new MethodVisitor(Opcodes.ASM9) {
+                return new MethodVisitor(ASM9) {
                     private int fieldGets = 0;
                     private int visitMethods = 0;
                     private int aloads = 0;
@@ -4389,7 +4388,7 @@ public class UiUtil implements Opcodes {
 
                     @Override
                     public void visitFieldInsn(int opcode, String owner, String fld, String fldDesc) {
-                        if (opcode == Opcodes.GETFIELD) {
+                        if (opcode == GETFIELD) {
                             fieldGets++;
                             if (fieldGets == 1 && aloads == 2 && visitMethods == 3) {
                                 heightNames[1] = fld;
