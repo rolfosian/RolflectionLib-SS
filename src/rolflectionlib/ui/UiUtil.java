@@ -9,6 +9,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 
+import org.apache.log4j.Logger;
 import org.objectweb.asm.*;
 
 import com.fs.starfarer.title.TitleScreenState;
@@ -20,28 +21,31 @@ import com.fs.starfarer.campaign.comms.v2.EventsPanel;
 import com.fs.starfarer.ui.impl.CargoTooltipFactory;
 import com.fs.starfarer.ui.impl.StandardTooltipV2;
 import com.fs.starfarer.ui.impl.StandardTooltipV2Expandable;
-
 import com.fs.starfarer.campaign.ui.UITable;
 import com.fs.starfarer.coreui.refit.FighterPickerDialog;
 import com.fs.starfarer.coreui.refit.WeaponPickerDialog;
 import com.fs.starfarer.loading.specs.BaseWeaponSpec;
 import com.fs.starfarer.loading.specs.FighterWingSpec;
+
 import com.fs.graphics.Sprite;
 import com.fs.graphics.util.Fader;
 
+import com.fs.starfarer.api.util.Pair;
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.OptionPanelAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
+
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.input.InputEventClass;
 import com.fs.starfarer.api.input.InputEventType;
+
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
-import com.fs.starfarer.api.util.Pair;
 import com.fs.starfarer.api.ui.PositionAPI;
 
 import rolflectionlib.inheritor.Inherit;
@@ -49,6 +53,16 @@ import rolflectionlib.util.RolFileUtil;
 import rolflectionlib.util.RolfLectionUtil;
 
 public class UiUtil implements Opcodes {
+    private static final Logger logger = Global.getLogger(UiUtil.class);
+    public static void print(Object... args) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            sb.append(args[i] instanceof String ? (String) args[i] : String.valueOf(args[i]));
+            if (i < args.length - 1) sb.append(' ');
+        }
+        logger.info(sb.toString());
+    }
+
     public static interface UiUtilInterface {
         public UIPanelAPI titleScreenStateGetScreenPanel(Object titleScreenState);
         public UIPanelAPI interactionDialogGetCore(Object interactionDialog);
@@ -5842,7 +5856,7 @@ public class UiUtil implements Opcodes {
     }
 
     private static void collectChildren(UIComponentAPI parent, List<UIComponentAPI> list) {
-        List<UIComponentAPI> children = UiUtil.utils.getChildrenNonCopy(parent);
+        List<UIComponentAPI> children = utils.getChildrenNonCopy(parent);
 
         if (children != null) {
             for (UIComponentAPI child : children) {
@@ -5850,6 +5864,78 @@ public class UiUtil implements Opcodes {
                 collectChildren(child, list);
             }
         }
+    }
+
+    public static InputEventAPI createButtonClickEventInstance(PositionAPI buttonPosition) {
+        return createInputEventInstance(
+        InputEventClass.MOUSE_EVENT,
+        InputEventType.MOUSE_DOWN,
+        (int)buttonPosition.getCenterX(),
+        (int)buttonPosition.getCenterY(),
+        0, // LMB
+        '\0' // unused?
+        );
+    }
+
+    public static InputEventAPI createInputEventInstance(InputEventClass eventClass, InputEventType eventType, int x, int y, int val, char c) {
+        return instantiator.instantiateInputEvent(
+            eventClass,
+            eventType,
+            x,
+            y,
+            val, // keyboard key or mouse button, is -1 for mouse move
+            c // char is only appicable for keyboard keys afaik, give '\0' for mouse prob
+        );
+    }
+
+    public static void clickButton(ButtonAPI button) {
+        if (button == null) return;
+
+        Object listener = utils.buttonGetListener(button);
+        utils.actionPerformed(listener, createButtonClickEventInstance(((ButtonAPI)button).getPosition()), button);
+    }
+
+    public static UIPanelAPI createConfirmDialog(String text, String confirmText, String cancelText, float width, float height, DialogDismissedListener dialogListener, UIPanelAPI screenPanel) {
+        return instantiator.instantiateConfirmDialog(
+            width,
+            height,
+            screenPanel,
+            dialogListener.getProxy(),
+            text,
+            confirmText,
+            cancelText
+        );
+    }
+
+    /**
+     * 
+     * @param title Confirm dialog window title
+     * @param confirmText Confirm button text
+     * @param cancelText Cancel button text
+     * @param width Dialog window width
+     * @param height Dialog window height
+     * @param dialogListener Listener implementation that calls {@link DialogDismissedListener} trigger method when the confirm dialog is closed
+     * @param screenPanel Panel field the confirm dialog anchors to. In most cases is the screenPanel field of CampaignUI. 
+     * @return Object array containing dialog components in this order: [0] Title label, [1] Confirm button, [2] Cancel button, [3] Confirm dialog object itself
+     */
+    public static Object[] showConfirmationDialog(
+        String title,
+        String confirmText,
+        String cancelText,
+        float width,
+        float height,
+        DialogDismissedListener dialogListener,
+        UIPanelAPI screenPanel
+    ) {
+
+        UIPanelAPI confirmDialog = createConfirmDialog(title, confirmText, cancelText, width, height, dialogListener, screenPanel);
+        utils.confirmDialogShow(confirmDialog, 0.25f, 0.25f);
+
+        LabelAPI label = utils.confirmDialogGetLabel(confirmDialog);
+        ButtonAPI yes = utils.confirmDialogGetButton(confirmDialog, 0);
+        ButtonAPI no =  utils.confirmDialogGetButton(confirmDialog, 1);
+
+        return new Object[] {label, yes, no, confirmDialog};
     }
 
     public static abstract class ActionListener {
