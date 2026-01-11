@@ -387,6 +387,8 @@ public class UiUtil implements Opcodes {
         String zoomTrackerDesc = Type.getDescriptor(zoomTrackerClass);
         String confirmDialogHoloDesc = Type.getDescriptor(confirmDialogHoloClass);
         String inputEventAPIDesc = Type.getDescriptor(InputEventAPI.class);
+        String inputEventClassDesc = Type.getDescriptor(InputEventClass.class);
+        String inputEventTypeDesc = Type.getDescriptor(InputEventType.class);
 
         // String addTooltipMethodDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class));
 
@@ -5597,7 +5599,7 @@ public class UiUtil implements Opcodes {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "instantiateInputEvent",
-                "(LInputEventClass;LInputEventType;III C)" + inputEventAPIDesc,
+                "(" + inputEventClassDesc + inputEventTypeDesc + "IIIC)" + inputEventAPIDesc,
                 null,
                 null
             );
@@ -5618,7 +5620,7 @@ public class UiUtil implements Opcodes {
                 INVOKESPECIAL,
                 inputEventInternalName,
                 "<init>",
-                "(LInputEventClass;LInputEventType;III C)V",
+                "(" + inputEventClassDesc + inputEventTypeDesc + "IIIC)V",
                 false
             );
         
@@ -5629,7 +5631,7 @@ public class UiUtil implements Opcodes {
         }
 
         {
-            // public List<?> instantiateInputEventList()
+            // public List<InputEventAPI> instantiateInputEventList()
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
                 "instantiateInputEventList",
