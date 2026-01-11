@@ -421,6 +421,10 @@ public class RolfLectionUtil {
     }
 
     public static void logMethod(Object method) throws Throwable {
+        logger.info(formatMethod(method));
+    }
+
+    public static String formatMethod(Object method) throws Throwable {
         String methodName = (String) getMethodNameHandle.invoke(method);
         Object genericReturnType = getGenericReturnTypeHandle.invoke(method);
         Object[] paramTypes = (Object[]) getGenericParameterTypesHandle.invoke(method);
@@ -433,7 +437,7 @@ public class RolfLectionUtil {
             if (paramString.length() > 0) paramString.append(", ");
             paramString.append(String.valueOf(paramType));
         }
-        logger.info(getVisibility(modifiers) + static_ + final_ + String.valueOf(genericReturnType) + " " + methodName + "(" + paramString.toString() + ")");
+        return getVisibility(modifiers) + static_ + final_ + String.valueOf(genericReturnType) + " " + methodName + "(" + paramString.toString() + ")";
     }
 
     public static void logConstructor(Object constructor, Class<?> cls) throws Throwable {
