@@ -57,8 +57,6 @@ public class RolfLectionLibPlugin extends BaseModPlugin {
 
     @Override
     public void onGameLoad(boolean newGame) {
-        Global.getSector().addTransientListener(new RolfLectionLibListener(false));
-
         // For custom dynamic at runtime campaign entity descriptions
         Map<String, Object> persistentData = Global.getSector().getPersistentData();
         String saveTimestamp = (String) persistentData.get(SAVE_TIMESTAMP_KEY);

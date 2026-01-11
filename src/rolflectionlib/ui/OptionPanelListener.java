@@ -378,4 +378,8 @@ public abstract class OptionPanelListener {
         && !buttonText.contains("back")
         && !buttonText.contains("never");
     }
+
+    public InteractionDialogAPI getDialog() {
+        return this.dialog;
+    }
 }
