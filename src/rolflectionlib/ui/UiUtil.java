@@ -34,6 +34,9 @@ import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.OptionPanelAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
+import com.fs.starfarer.api.input.InputEventAPI;
+import com.fs.starfarer.api.input.InputEventClass;
+import com.fs.starfarer.api.input.InputEventType;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
@@ -248,6 +251,8 @@ public class UiUtil implements Opcodes {
         public UIPanelAPI instantiateUiPanel(float width, float height);
         public UIPanelAPI instantiateProgressBar(String text, float rangeMin, float rangeMax);
         public UIPanelAPI instantiateConfirmDialog(float width, float height, UIPanelAPI parent, Object dialogDismissedListener, String titleLabelText, String... buttonTexts);
+        public InputEventAPI instantiateInputEvent(InputEventClass eventClass, InputEventType eventType, int x, int y, int value, char c);
+        public List<InputEventAPI> instantiateInputEventList();
     }
 
     // With this we can implement the above interface and generate a class at runtime to call obfuscated class methods platform agnostically without RolfLectionUtilection overhead
@@ -274,6 +279,7 @@ public class UiUtil implements Opcodes {
         Class<?> courseWidgetClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCourseWidget", CampaignState.class));
         Class<?> messageDisplayClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("messageDisplay", CampaignState.class));
         Class<?> progressBarClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("bar", CampaignProgressIndicator.class));
+        Class<?> inputEventListClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethodDeclared("processInputImpl", uiPanelClass))[0];
 
         Class<?> mapTabClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getMap", EventsPanel.class));
         Class<?> mapClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getMap", mapTabClass));
@@ -342,6 +348,7 @@ public class UiUtil implements Opcodes {
         String setTooltipInterfaceInternalName = Type.getInternalName(setTooltipInterface);
         String uiComponentInterfaceAInternalName = Type.getInternalName(uiComponentInterfaceA);
         String progressBarInternalName = Type.getInternalName(progressBarClass);
+        String inputEventListInternalName = Type.getInternalName(inputEventListClass);
 
         String titleScreenStateDesc = Type.getDescriptor(TitleScreenState.class);
         String coreClassDesc = Type.getDescriptor(coreClass);
@@ -379,6 +386,7 @@ public class UiUtil implements Opcodes {
         String labelDesc = Type.getDescriptor(labelClass);
         String zoomTrackerDesc = Type.getDescriptor(zoomTrackerClass);
         String confirmDialogHoloDesc = Type.getDescriptor(confirmDialogHoloClass);
+        String inputEventAPIDesc = Type.getDescriptor(InputEventAPI.class);
 
         // String addTooltipMethodDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class));
 
@@ -5575,6 +5583,71 @@ public class UiUtil implements Opcodes {
                 confirmDialogInternalName,
                 "<init>",
                 "(FF" + uiPanelAPIDesc + "Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/String;)V",
+                false
+            );
+        
+            mv.visitInsn(ARETURN);
+        
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        {
+            // public InputEventAPI instantiateInputEvent(InputEventClass eventClass, InputEventType eventType, int x, int y, int value, char c)
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "instantiateInputEvent",
+                "(LInputEventClass;LInputEventType;III C)" + inputEventAPIDesc,
+                null,
+                null
+            );
+        
+            mv.visitCode();
+        
+            mv.visitTypeInsn(NEW, inputEventInternalName);
+            mv.visitInsn(DUP);
+        
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitVarInsn(ALOAD, 2);
+            mv.visitVarInsn(ILOAD, 3);
+            mv.visitVarInsn(ILOAD, 4);
+            mv.visitVarInsn(ILOAD, 5);
+            mv.visitVarInsn(ILOAD, 6);
+        
+            mv.visitMethodInsn(
+                INVOKESPECIAL,
+                inputEventInternalName,
+                "<init>",
+                "(LInputEventClass;LInputEventType;III C)V",
+                false
+            );
+        
+            mv.visitInsn(ARETURN);
+        
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        {
+            // public List<?> instantiateInputEventList()
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "instantiateInputEventList",
+                "()" + listDesc,
+                null,
+                null
+            );
+        
+            mv.visitCode();
+        
+            mv.visitTypeInsn(NEW, inputEventListInternalName);
+            mv.visitInsn(DUP);
+        
+            mv.visitMethodInsn(
+                INVOKESPECIAL,
+                inputEventListInternalName,
+                "<init>",
+                "()V",
                 false
             );
         
