@@ -85,19 +85,19 @@ public class UiUtil implements Opcodes {
         public Object buttonGetRendererCheckbox(Object button);
 
         public PositionAPI labelAutoSize(Object label);
-        public void labelSetTooltipOffsetFromCenter(Object label, float xPad, float yPad); // TODO // not to be confused with uiComponent method with same name (not an interface method)
+        public void labelSetTooltipOffsetFromCenter(Object label, float xPad, float yPad); // not to be confused with uiComponent method with same name (not an interface method)
         public UIPanelAPI labelGetParent(Object label); // not to be confused with uiComponent method with same name (its not an interface method)
         
         public Fader uiComponentGetFader(Object uiComponent);
         public void uiComponentSetFader(Object uiComponent, Fader fader);
         public Object uiComponentGetTooltip(Object uiComponent);
 
-        public void setTooltip(Object uiComponent, Object tooltip); // TODO
-        public void setTooltipPositionRelativeToAnchor(Object uiComponent, float xPad, float yPad, Object anchor); // TODO // anchor should be instance of uicomponent
+        public void setTooltip(Object uiComponent, float var1, Object tooltip);
+        public void setTooltipPositionRelativeToAnchor(Object uiComponent, float xPad, float yPad, Object anchor); // anchor should be instance of uicomponent
 
         public void showTooltip(Object uiComponent, Object tooltip);
         public void hideTooltip(Object uiComponent, Object tooltip);
-        public void uiComponentsetTooltipOffsetFromCenter(Object uiComponent, float xPad, float yPad); // TODO // not to be confused with label method with same name (its not an interface method)
+        public void uiComponentsetTooltipOffsetFromCenter(Object uiComponent, float xPad, float yPad); // not to be confused with label method with same name (its not an interface method)
         
         public UIComponentAPI getContents(Object tooltip);
         
@@ -201,7 +201,7 @@ public class UiUtil implements Opcodes {
         public void progressBarSetUserAdjustable(UIPanelAPI progressBar, boolean userAdjustable);
         public void progressBarSetShowAdjustableIndicator(UIPanelAPI progressBar, boolean showAdjustableIndicator);
         public float progressBarGetProgress(UIPanelAPI progressBar);
-        public void progressBarforceSync(UIPanelAPI progressBar);
+        public void progressBarForceSync(UIPanelAPI progressBar);
         public void progressBarSizeChanged(UIPanelAPI progressBar, float width, float height);
         public void progressBarSetHighlightOnMouseover(UIPanelAPI progressBar, boolean highlightOnMouseover);
         public void progressBarSetBonusColor(UIPanelAPI progressBar, Color color);
@@ -242,6 +242,12 @@ public class UiUtil implements Opcodes {
         public Color progressBarGetBarColor(UIPanelAPI progressBar);
         public void progressBarSetTextValueColor(UIPanelAPI progressBar, Color color);
         public void progressBarSetShowPercent(UIPanelAPI progressBar, boolean showPercent);
+    }
+
+    public static interface UiInstantiator {
+        public UIPanelAPI instantiateUiPanel(float width, float height);
+        public UIPanelAPI instantiateProgressBar(String text, float rangeMin, float rangeMax);
+        public UIPanelAPI instantiateConfirmDialog(float width, float height, UIPanelAPI parent, Object dialogDismissedListener, String titleLabelText, String... buttonTexts);
     }
 
     // With this we can implement the above interface and generate a class at runtime to call obfuscated class methods platform agnostically without RolfLectionUtilection overhead
@@ -376,17 +382,16 @@ public class UiUtil implements Opcodes {
 
         // String addTooltipMethodDesc = Type.getMethodDescriptor(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class));
 
-        String superName = Type.getType(Object.class).getInternalName();
-        String interfaceName = Type.getType(UiUtilInterface.class).getInternalName();
+        String superName = Type.getInternalName(Object.class);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         // public class UiUtilInterface extends Object implements this crap
         cw.visit(
             V17,
             ACC_PUBLIC,
-            "rolflectionlib/util/UiUtilInterface",
+            "rolflectionlib/ui/UiUtilInterface",
             null,
             superName,
-            new String[] {interfaceName}
+            new String[] {Type.getInternalName(UiUtilInterface.class)}
         );
 
         // public UiUtilInterface() {
@@ -1257,6 +1262,39 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
+        // public void labelSetTooltipOffsetFromCenter(Object label, float xPad, float yPad) {
+        //     ((labelClass)label).setTooltipOffsetFromCenter(xPad, yPad);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "labelSetTooltipOffsetFromCenter",
+                "(Ljava/lang/Object;FF)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, labelInternalName);
+
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                labelInternalName,
+                "setTooltipOffsetFromCenter",
+                "(FF)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
         // public void buttonSetListener(Object button, Object listener) {
         //     ((buttonClass)button).setListener(listener);
         // }
@@ -1472,13 +1510,13 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public void setTooltipOffsetFromCenter(Object uiComponent, float xPad, float yPad) {
+        // public void uiComponentsetTooltipOffsetFromCenter(Object uiComponent, float xPad, float yPad) {
         //     ((uiComponentClass)uiComponent).setTooltipOffsetFromCenter(xPad, yPad);
         // }
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
-                "setTooltipOffsetFromCenter",
+                "uiComponentsetTooltipOffsetFromCenter",
                 "(Ljava/lang/Object;FF)V",
                 null,
                 null
@@ -1496,6 +1534,39 @@ public class UiUtil implements Opcodes {
                 "setTooltipOffsetFromCenter",
                 "(FF)V",
                 false
+            );
+
+            mv.visitInsn(RETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void setTooltip(Object uiComponent, float var1, Object tooltip) {
+        //     ((setTooltipInterface)uiComponent).setTooltip(var1, tooltip);
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "setTooltip",
+                "(Ljava/lang/Object;FLjava/lang/Object;)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, setTooltipInterfaceInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitVarInsn(ALOAD, 3);
+            mv.visitTypeInsn(CHECKCAST, toolTipInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEINTERFACE,
+                setTooltipInterfaceInternalName,
+                "setTooltip",
+                "(F" + tooltipDesc + ")V",
+                true // interface method
             );
 
             mv.visitInsn(RETURN);
@@ -1525,7 +1596,7 @@ public class UiUtil implements Opcodes {
             mv.visitTypeInsn(CHECKCAST, uiComponentInterfaceAInternalName);
 
             mv.visitMethodInsn(
-                INVOKEVIRTUAL,
+                INVOKEINTERFACE,
                 setTooltipInterfaceInternalName,
                 "setTooltipPositionRelativeToAnchor",
                 "(FF" + uiComponentInterfaceADesc + ")V",
@@ -4250,11 +4321,11 @@ public class UiUtil implements Opcodes {
             mv.visitEnd();
         }
 
-        // public void progressBarforceSync(UIPanelAPI progressBar);
+        // public void progressBarForceSync(UIPanelAPI progressBar);
         {
             MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
-                "progressBarforceSync",
+                "progressBarForceSync",
                 "(" + uiPanelAPIDesc + ")V",
                 null,
                 null
@@ -5386,13 +5457,145 @@ public class UiUtil implements Opcodes {
         }
 
         cw.visitEnd();
+        byte[] utilClassBytes = cw.toByteArray();
+
+        cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        // public class UiInstantiator implements this crap
+        cw.visit(
+            V17,
+            ACC_PUBLIC,
+            "rolflectionlib/ui/UiInstantiator",
+            null,
+            superName,
+            new String[] {Type.getInternalName(UiInstantiator.class)}
+        );
+
+        ctor = cw.visitMethod(
+            ACC_PUBLIC,
+            "<init>",
+            "()V",
+            null,
+            null
+        );
+        ctor.visitCode();
+        ctor.visitVarInsn(ALOAD, 0);
+        ctor.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "()V", false);
+        ctor.visitInsn(RETURN);
+        ctor.visitMaxs(0, 0);
+        ctor.visitEnd();
+
+        {
+            // public UIPanelAPI instantiateProgressBar(String text, float rangeMin, float rangeMax)
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "instantiateProgressBar",
+                "(Ljava/lang/String;FF)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            
+            mv.visitCode();
+            
+            mv.visitTypeInsn(NEW, progressBarInternalName);
+            mv.visitInsn(DUP);
+            
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitVarInsn(FLOAD, 3);
+            
+            mv.visitMethodInsn(
+                INVOKESPECIAL,
+                progressBarInternalName,
+                "<init>",
+                "(Ljava/lang/String;FF)V",
+                false
+            );
+            
+            mv.visitInsn(ARETURN);
+            
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        {
+            // public UIPanelAPI instantiateUiPanel(float width, float height)
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "instantiateProgressBar",
+                "(FF)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            
+            mv.visitCode();
+            
+            mv.visitTypeInsn(NEW, uiPanelInternalName);
+            mv.visitInsn(DUP);
+            
+            mv.visitVarInsn(FLOAD, 1);
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitMethodInsn(
+                INVOKESPECIAL,
+                uiPanelInternalName,
+                "<init>",
+                "(Ljava/lang/String;FF)V",
+                false
+            );
+            
+            mv.visitInsn(ARETURN);
+            
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        {
+            // public UIPanelAPI instantiateConfirmDialog(float width, float height, UIPanelAPI parent, Object dialogDismissedListener, String titleLabelText, String... buttonTexts)
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "instantiateConfirmDialog",
+                "(FF" + uiPanelAPIDesc + "Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/String;)" + uiPanelAPIDesc,
+                null,
+                null
+            );
+        
+            mv.visitCode();
+        
+            mv.visitTypeInsn(NEW, confirmDialogInternalName);
+            mv.visitInsn(DUP);
+        
+            mv.visitVarInsn(FLOAD, 1);
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitVarInsn(ALOAD, 3);
+            mv.visitVarInsn(ALOAD, 4);
+            mv.visitVarInsn(ALOAD, 5);
+            mv.visitVarInsn(ALOAD, 6);
+        
+            mv.visitMethodInsn(
+                INVOKESPECIAL,
+                confirmDialogInternalName,
+                "<init>",
+                "(FF" + uiPanelAPIDesc + "Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/String;)V",
+                false
+            );
+        
+            mv.visitInsn(ARETURN);
+        
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        cw.visitEnd();
+        byte[] instantiatorClassBytes =  cw.toByteArray();
         // if (true) {
-        //     Inherit.dumpClass(cw.toByteArray(), "UiUtilInterface.class");
+        //     Inherit.dumpClass(utilClassBytes, "UiUtilInterface.class");
+        //     Inherit.dumpClass(instantiatorClassBytes, "UiInstantiator.class");
         //     throw new RuntimeException();
         // }
 
         return new Class<?>[] {
-            Inherit.inheritCl.define(cw.toByteArray(), "rolflectionlib.util.UiUtilInterface"),
+            Inherit.inheritCl.define(utilClassBytes, "rolflectionlib.ui.UiUtilInterface"),
+            Inherit.inheritCl.define(instantiatorClassBytes, "rolflectionlib.ui.UiInstantiator"),
+
             uiPanelClass,
             uiComponentClass,
             confirmDialogClass,
@@ -5403,6 +5606,8 @@ public class UiUtil implements Opcodes {
     }
 
     public static final UiUtilInterface utils;
+    public static final UiInstantiator instantiator;
+
     public static final Class<?> uiPanelClass;
     public static final Class<?> uiComponentClass;
     public static final Class<?> confirmDialogClass;
@@ -5426,17 +5631,21 @@ public class UiUtil implements Opcodes {
 
     static {
         try {
-            Class<?>[] result = implementUiUtilInterface();
-            utils = (UiUtilInterface) RolfLectionUtil.instantiateClass(result[0].getConstructors()[0]);
 
-            uiPanelClass = result[1];
-            uiComponentClass = result[2];
-            confirmDialogClass = result[3];
-            actionPerformedInterface = result[4];
-            dialogDismissedInterface = result[5];
+            int i = 0;
+            Class<?>[] result = implementUiUtilInterface();
+
+            utils = (UiUtilInterface) RolfLectionUtil.instantiateClass(result[i++].getConstructors()[0]);
+            instantiator = (UiInstantiator) RolfLectionUtil.instantiateClass(result[i++].getConstructors()[0]);
+
+            uiPanelClass = result[i++];
+            uiComponentClass = result[i++];
+            confirmDialogClass = result[i++];
+            actionPerformedInterface = result[i++];
+            dialogDismissedInterface = result[i++];
 
             MethodHandles.Lookup lookup = MethodHandles.lookup();
-            Class<?> listPanelClass = result[6];
+            Class<?> listPanelClass = result[i++];
             listPanelMapVarHandle = MethodHandles.privateLookupIn(listPanelClass, lookup).findVarHandle(
                 listPanelClass,
                 RolfLectionUtil.getFieldName(RolfLectionUtil.getFieldByType(listPanelClass, Map.class)),
@@ -5603,7 +5812,6 @@ public class UiUtil implements Opcodes {
             return this.listener;
         }
     }
-
 
     private static class DialogDismissedListenerProxy {
         private final DialogDismissedListener listener;
