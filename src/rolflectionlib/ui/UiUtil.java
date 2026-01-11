@@ -6270,7 +6270,7 @@ public class UiUtil implements Opcodes {
             }
         }, 0);
 
-        return new Pair<Class<?>, String[]>(cls[0], new String[] {heightNames[0], heightNames[1]}); 
+        return new Pair<Class<?>, String[]>(cls[0], heightNames); 
     }
 
     public static void init() {} // called to load this class and generate the interface class in onApplicationLoad
