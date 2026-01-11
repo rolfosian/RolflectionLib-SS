@@ -13,6 +13,7 @@ import org.objectweb.asm.*;
 
 import com.fs.starfarer.title.TitleScreenState;
 import com.fs.starfarer.campaign.BaseLocation;
+import com.fs.starfarer.campaign.CampaignProgressIndicator;
 import com.fs.starfarer.campaign.CampaignState;
 import com.fs.starfarer.campaign.command.AdminPickerDialog;
 import com.fs.starfarer.campaign.comms.v2.EventsPanel;
@@ -188,6 +189,59 @@ public class UiUtil implements Opcodes {
         public void addTooltipBelow(Object tooltip, Object uiComponent, float padding);
         public void addTooltipRight(Object tooltip, Object uiComponent, float padding);
         public void addTooltipLeft(Object tooltip, Object uiComponent, float padding);
+
+        public void progressBarSetMin(UIPanelAPI progressBar, float min);
+        public LabelAPI progressBarGetValue(UIPanelAPI progressBar);
+        public void progressBarSetText(UIPanelAPI progressBar, String text);
+        public float progressBarGetMax(UIPanelAPI progressBar);
+        public void progressBarSetBarColor(UIPanelAPI progressBar, Color color);
+        public void progressBarSetRoundBarValue(UIPanelAPI progressBar, boolean roundBarValue);
+        public void progressBarSetProgress(UIPanelAPI progressBar, float progress);
+        public void progressBarSetShowLabelOnly(UIPanelAPI progressBar, boolean showLabelOnly);
+        public void progressBarSetUserAdjustable(UIPanelAPI progressBar, boolean userAdjustable);
+        public void progressBarSetShowAdjustableIndicator(UIPanelAPI progressBar, boolean showAdjustableIndicator);
+        public float progressBarGetProgress(UIPanelAPI progressBar);
+        public void progressBarforceSync(UIPanelAPI progressBar);
+        public void progressBarSizeChanged(UIPanelAPI progressBar, float width, float height);
+        public void progressBarSetHighlightOnMouseover(UIPanelAPI progressBar, boolean highlightOnMouseover);
+        public void progressBarSetBonusColor(UIPanelAPI progressBar, Color color);
+        public float progressBarGetRangeMin(UIPanelAPI progressBar);
+        public Color progressBarGetBonusColor(UIPanelAPI progressBar);
+        public void progressBarSetScrollSpeed(UIPanelAPI progressBar, float scrollSpeed);
+        public void progressBarSetClampCurrToMax(UIPanelAPI progressBar, boolean clampCurrToMax);
+        public float progressBarGetRangeMax(UIPanelAPI progressBar);
+        public int progressBarGetNumSubivisions(UIPanelAPI progressBar);
+        public boolean progressBarIsShowNoText(UIPanelAPI progressBar);
+        public void progressBarSetShowValueOnly(UIPanelAPI progressBar, boolean showValueOnly);
+        public boolean progressBarIsShowLabelOnly(UIPanelAPI progressBar);
+        public float progressBarGetBonusAmount(UIPanelAPI progressBar);
+        public void progressBarSetBonusAmount(UIPanelAPI progressBar, float bonusAmount);
+        public void progressBarSetNumSubivisions(UIPanelAPI progressBar, int numSubdivisions); // TODO keep an eye on this. Alex typo
+        public void progressBarSetShowNoText(UIPanelAPI progressBar, boolean showNoText);
+        public Color progressBarGetWidgetColor(UIPanelAPI progressBar);
+        public void progressBarSetWidgetColor(UIPanelAPI progressBar, Color color);
+        public Fader progressBarGetHighlight(UIPanelAPI progressBar);
+        public void progressBarSetTextColor(UIPanelAPI progressBar, Color color);
+        public void progressBarSetRangeMax(UIPanelAPI progressBar, float rangeMax);
+        public void progressBarSetRangeMin(UIPanelAPI progressBar, float rangeMin);
+        public void progressBarSetMax(UIPanelAPI progressBar, float max);
+        public void progressBarSetShowDecimalForValueOnlyMode(UIPanelAPI progressBar, boolean showDecimalForValueOnlyMod);
+        public void progressBarSetFlashOnOverflowFraction(UIPanelAPI progressBar, float flashOnOverflowFraction);
+        public void progressBarSetPotentialDecreaseAmount(UIPanelAPI progressBar, float potentialDecreaseAmount);
+        public void progressBarSetBarColorOverflow(UIPanelAPI progressBar, Color color);
+        public Fader progressBarGetBarHighlightFader(UIPanelAPI progressBar);
+        public int progressBarGetRoundingIncrement(UIPanelAPI progressBar);
+        public void progressBarSetRoundingIncrement(UIPanelAPI progressBar, int roundingIncrement);
+        public void progressBarSetLineUpTextOnCenter(UIPanelAPI progressBar, boolean lineUpTextOnCenter, float offset);
+        public void progressBarSetHighlightBrightnessOverride(UIPanelAPI progressBar, float highlightBrightnessOverride);
+        public void progressBarSetShowNotchOnIfBelowProgress(UIPanelAPI progressBar, float showNotchOnIfBelowProgress);
+        public float progressBarGetShowNotchOnIfBelowProgress(UIPanelAPI progressBar);
+        public float progressBarGetXCoordinateForProgressValue(UIPanelAPI progressBar, float value);
+        public void progressBarSetShowPercentAndTitle(UIPanelAPI progressBar, boolean showPercentAndTitle);
+        public boolean progressBarIsShowAdjustableIndicator(UIPanelAPI progressBar);
+        public Color progressBarGetBarColor(UIPanelAPI progressBar);
+        public void progressBarSetTextValueColor(UIPanelAPI progressBar, Color color);
+        public void progressBarSetShowPercent(UIPanelAPI progressBar, boolean showPercent);
     }
 
     // With this we can implement the above interface and generate a class at runtime to call obfuscated class methods platform agnostically without RolfLectionUtilection overhead
@@ -213,6 +267,7 @@ public class UiUtil implements Opcodes {
         Class<?> addTooltipUiComponentClass = RolfLectionUtil.getMethodParamTypes(RolfLectionUtil.getMethod("addTooltipAbove", StandardTooltipV2Expandable.class))[0];
         Class<?> courseWidgetClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCourseWidget", CampaignState.class));
         Class<?> messageDisplayClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("messageDisplay", CampaignState.class));
+        Class<?> progressBarClass = RolfLectionUtil.getFieldType(RolfLectionUtil.getFieldByName("bar", CampaignProgressIndicator.class));
 
         Class<?> mapTabClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getMap", EventsPanel.class));
         Class<?> mapClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getMap", mapTabClass));
@@ -280,6 +335,7 @@ public class UiUtil implements Opcodes {
         String showTooltipInterfaceInternalName = Type.getInternalName(showTooltipInterface);
         String setTooltipInterfaceInternalName = Type.getInternalName(setTooltipInterface);
         String uiComponentInterfaceAInternalName = Type.getInternalName(uiComponentInterfaceA);
+        String progressBarInternalName = Type.getInternalName(progressBarClass);
 
         String titleScreenStateDesc = Type.getDescriptor(TitleScreenState.class);
         String coreClassDesc = Type.getDescriptor(coreClass);
@@ -3888,7 +3944,1452 @@ public class UiUtil implements Opcodes {
             mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
+
+        // public void progressBarSetMin(UIPanelAPI progressBar, float min);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetMin",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setMin",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public LabelAPI progressBarGetValue(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetValue",
+                "(" + uiPanelAPIDesc + ")" + labelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getValue",
+                "()" + labelAPIDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetText(UIPanelAPI progressBar, String text);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetText",
+                "(" + uiPanelAPIDesc + stringDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setText",
+                "(" + stringDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float progressBarGetMax(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetMax",
+                "(" + uiPanelAPIDesc + ")F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getMax",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetBarColor(UIPanelAPI progressBar, Color color);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetBarColor",
+                "(" + uiPanelAPIDesc + colorDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setBarColor",
+                "(" + colorDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetRoundBarValue(UIPanelAPI progressBar, boolean roundBarValue);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetRoundBarValue",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setRoundBarValue",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetProgress(UIPanelAPI progressBar, float progress);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetProgress",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setProgress",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetShowLabelOnly(UIPanelAPI progressBar, boolean showLabelOnly);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetShowLabelOnly",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setShowLabelOnly",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetUserAdjustable(UIPanelAPI progressBar, boolean userAdjustable);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetUserAdjustable",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setUserAdjustable",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetShowAdjustableIndicator(UIPanelAPI progressBar, boolean showAdjustableIndicator);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetShowAdjustableIndicator",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setShowAdjustableIndicator",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float progressBarGetProgress(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetProgress",
+                "(" + uiPanelAPIDesc + ")F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getProgress",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarforceSync(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarforceSync",
+                "(" + uiPanelAPIDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "forceSync",
+                "()V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSizeChanged(UIPanelAPI progressBar, float width, float height);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSizeChanged",
+                "(" + uiPanelAPIDesc + "FF)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "sizeChanged",
+                "(FF)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetHighlightOnMouseover(UIPanelAPI progressBar, boolean highlightOnMouseover);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetHighlightOnMouseover",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setHighlightOnMouseover",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetBonusColor(UIPanelAPI progressBar, Color color);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetBonusColor",
+                "(" + uiPanelAPIDesc + colorDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setBonusColor",
+                "(" + colorDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float progressBarGetRangeMin(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetRangeMin",
+                "(" + uiPanelAPIDesc + ")F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getRangeMin",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Color progressBarGetBonusColor(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetBonusColor",
+                "(" + uiPanelAPIDesc + ")" + colorDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getBonusColor",
+                "()" + colorDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetScrollSpeed(UIPanelAPI progressBar, float scrollSpeed);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetScrollSpeed",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setScrollSpeed",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetClampCurrToMax(UIPanelAPI progressBar, boolean clampCurrToMax);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetClampCurrToMax",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setClampCurrToMax",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float progressBarGetRangeMax(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetRangeMax",
+                "(" + uiPanelAPIDesc + ")F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getRangeMax",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public int progressBarGetNumSubivisions(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetNumSubivisions",
+                "(" + uiPanelAPIDesc + ")I",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getNumSubivisions",
+                "()I",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public boolean progressBarIsShowNoText(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarIsShowNoText",
+                "(" + uiPanelAPIDesc + ")Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "isShowNoText",
+                "()Z",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetShowValueOnly(UIPanelAPI progressBar, boolean showValueOnly);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetShowValueOnly",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setShowValueOnly",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public boolean progressBarIsShowLabelOnly(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarIsShowLabelOnly",
+                "(" + uiPanelAPIDesc + ")Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "isShowLabelOnly",
+                "()Z",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float progressBarGetBonusAmount(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetBonusAmount",
+                "(" + uiPanelAPIDesc + ")F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getBonusAmount",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetBonusAmount(UIPanelAPI progressBar, float bonusAmount);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetBonusAmount",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setBonusAmount",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetNumSubivisions(UIPanelAPI progressBar, int numSubdivisions);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetNumSubivisions",
+                "(" + uiPanelAPIDesc + "I)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setNumSubivisions",
+                "(I)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetShowNoText(UIPanelAPI progressBar, boolean showNoText);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetShowNoText",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setShowNoText",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Color progressBarGetWidgetColor(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetWidgetColor",
+                "(" + uiPanelAPIDesc + ")" + colorDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getWidgetColor",
+                "()" + colorDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetWidgetColor(UIPanelAPI progressBar, Color color);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetWidgetColor",
+                "(" + uiPanelAPIDesc + colorDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setWidgetColor",
+                "(" + colorDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Fader progressBarGetHighlight(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetHighlight",
+                "(" + uiPanelAPIDesc + ")" + faderDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getHighlight",
+                "()" + faderDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetTextColor(UIPanelAPI progressBar, Color color);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetTextColor",
+                "(" + uiPanelAPIDesc + colorDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setTextColor",
+                "(" + colorDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetRangeMax(UIPanelAPI progressBar, float rangeMax);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetRangeMax",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setRangeMax",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetRangeMin(UIPanelAPI progressBar, float rangeMin);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetRangeMin",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setRangeMin",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetMax(UIPanelAPI progressBar, float max);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetMax",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setMax",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetShowDecimalForValueOnlyMode(UIPanelAPI progressBar, boolean showDecimalForValueOnlyMod);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetShowDecimalForValueOnlyMode",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setShowDecimalForValueOnlyMode",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetFlashOnOverflowFraction(UIPanelAPI progressBar, float flashOnOverflowFraction);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetFlashOnOverflowFraction",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setFlashOnOverflowFraction",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetPotentialDecreaseAmount(UIPanelAPI progressBar, float potentialDecreaseAmount);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetPotentialDecreaseAmount",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setPotentialDecreaseAmount",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetBarColorOverflow(UIPanelAPI progressBar, Color color);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetBarColorOverflow",
+                "(" + uiPanelAPIDesc + colorDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setBarColorOverflow",
+                "(" + colorDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Fader progressBarGetBarHighlightFader(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetBarHighlightFader",
+                "(" + uiPanelAPIDesc + ")" + faderDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getBarHighlightFader",
+                "()" + faderDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public int progressBarGetRoundingIncrement(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetRoundingIncrement",
+                "(" + uiPanelAPIDesc + ")I",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getRoundingIncrement",
+                "()I",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetRoundingIncrement(UIPanelAPI progressBar, int roundingIncrement);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetRoundingIncrement",
+                "(" + uiPanelAPIDesc + "I)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setRoundingIncrement",
+                "(I)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetLineUpTextOnCenter(UIPanelAPI progressBar, boolean lineUpTextOnCenter, float offset);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetLineUpTextOnCenter",
+                "(" + uiPanelAPIDesc + "ZF)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+            mv.visitVarInsn(FLOAD, 3);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setLineUpTextOnCenter",
+                "(ZF)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetHighlightBrightnessOverride(UIPanelAPI progressBar, float highlightBrightnessOverride);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetHighlightBrightnessOverride",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setHighlightBrightnessOverride",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetShowNotchOnIfBelowProgress(UIPanelAPI progressBar, float showNotchOnIfBelowProgress);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetShowNotchOnIfBelowProgress",
+                "(" + uiPanelAPIDesc + "F)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setShowNotchOnIfBelowProgress",
+                "(F)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float progressBarGetShowNotchOnIfBelowProgress(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetShowNotchOnIfBelowProgress",
+                "(" + uiPanelAPIDesc + ")F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getShowNotchOnIfBelowProgress",
+                "()F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public float progressBarGetXCoordinateForProgressValue(UIPanelAPI progressBar, float value);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetXCoordinateForProgressValue",
+                "(" + uiPanelAPIDesc + "F)F",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(FLOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getXCoordinateForProgressValue",
+                "(F)F",
+                false
+            );
+
+            mv.visitInsn(FRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetShowPercentAndTitle(UIPanelAPI progressBar, boolean showPercentAndTitle);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetShowPercentAndTitle",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setShowPercentAndTitle",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public boolean progressBarIsShowAdjustableIndicator(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarIsShowAdjustableIndicator",
+                "(" + uiPanelAPIDesc + ")Z",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "isShowAdjustableIndicator",
+                "()Z",
+                false
+            );
+
+            mv.visitInsn(IRETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public Color progressBarGetBarColor(UIPanelAPI progressBar);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarGetBarColor",
+                "(" + uiPanelAPIDesc + ")" + colorDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "getBarColor",
+                "()" + colorDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetTextValueColor(UIPanelAPI progressBar, Color color);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetTextValueColor",
+                "(" + uiPanelAPIDesc + colorDesc + ")V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ALOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setTextValueColor",
+                "(" + colorDesc + ")V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public void progressBarSetShowPercent(UIPanelAPI progressBar, boolean showPercent);
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "progressBarSetShowPercent",
+                "(" + uiPanelAPIDesc + "Z)V",
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, progressBarInternalName);
+            mv.visitVarInsn(ILOAD, 2);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                progressBarInternalName,
+                "setShowPercent",
+                "(Z)V",
+                false
+            );
+
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
         cw.visitEnd();
+        // if (true) {
+        //     Inherit.dumpClass(cw.toByteArray(), "UiUtilInterface.class");
+        //     throw new RuntimeException();
+        // }
 
         return new Class<?>[] {
             Inherit.inheritCl.define(cw.toByteArray(), "rolflectionlib.util.UiUtilInterface"),
