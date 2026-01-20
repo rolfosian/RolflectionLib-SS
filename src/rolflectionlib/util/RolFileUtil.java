@@ -73,36 +73,17 @@ public class RolFileUtil {
     }
 
     public static void writeToFile(String path, byte[] data) {
-        if (fileExists(path)) {
-            throw new IllegalStateException("File already exists: " + path);
-        }
-    
-        if (!pathExists(path)) {
-            RolfLectionUtil.invokeMethodDirectly(mkdirsMethod, path);
-        }
-    
         Object file = RolfLectionUtil.instantiateClass(fileCtor, path);
+        Object parent = RolfLectionUtil.invokeMethodDirectly(getParentFileMethod, file);
+
+        if (parent != null && !((boolean) RolfLectionUtil.invokeMethodDirectly(fileExistsMethod, parent))) {
+            RolfLectionUtil.invokeMethodDirectly(mkdirsMethod, parent);
+        }
+
         Object faos = RolfLectionUtil.instantiateClass(faosCtor, file);
-    
         RolfLectionUtil.invokeMethodDirectly(faosWriteMethod, faos, data);
         RolfLectionUtil.invokeMethodDirectly(faosFlushMethod, faos);
         RolfLectionUtil.invokeMethodDirectly(faosCloseMethod, faos);
-    }
-
-    public static boolean fileExists(String filePath) {
-        Object file = RolfLectionUtil.instantiateClass(fileCtor, filePath);
-        return (boolean) RolfLectionUtil.invokeMethodDirectly(fileExistsMethod, file);
-    }
-    
-    public static boolean pathExists(String filePath) {
-        Object file = RolfLectionUtil.instantiateClass(fileCtor, filePath);
-        Object parent = RolfLectionUtil.invokeMethodDirectly(getParentFileMethod, file);
-    
-        if (parent == null) {
-            return false;
-        }
-    
-        return (boolean) RolfLectionUtil.invokeMethodDirectly(fileExistsMethod, parent);
     }
 
     public static int computeBufferSize(Object inputStream) {
