@@ -375,6 +375,7 @@ public class UiUtil implements Opcodes {
         String buttonClassDesc = Type.getDescriptor(buttonClass);
         String buttonRendererPanelDesc = Type.getDescriptor(buttonRendererPanelClass);
         String actionListenerInterfaceDesc = Type.getDescriptor(actionPerformedInterface);
+        String dialogDismissedInterfaceDesc = Type.getDescriptor(dialogDismissedInterface);
         String tooltipDesc = Type.getDescriptor(toolTipClass);
         String labelAPIDesc = Type.getDescriptor(LabelAPI.class);
         String optionPanelApiDesc = Type.getDescriptor(OptionPanelAPI.class);
@@ -5598,7 +5599,7 @@ public class UiUtil implements Opcodes {
                 INVOKESPECIAL,
                 confirmDialogInternalName,
                 "<init>",
-                "(FF" + uiPanelAPIDesc + "Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/String;)V",
+                "(FF" + uiPanelClassDesc + dialogDismissedInterfaceDesc + "Ljava/lang/String;[Ljava/lang/String;)V",
                 false
             );
         
