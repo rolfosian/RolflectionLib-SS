@@ -22,6 +22,7 @@ import com.fs.starfarer.ui.impl.CargoTooltipFactory;
 import com.fs.starfarer.ui.impl.StandardTooltipV2;
 import com.fs.starfarer.ui.impl.StandardTooltipV2Expandable;
 import com.fs.starfarer.campaign.ui.UITable;
+import com.fs.starfarer.combat.CombatEngine;
 import com.fs.starfarer.coreui.refit.FighterPickerDialog;
 import com.fs.starfarer.coreui.refit.WeaponPickerDialog;
 import com.fs.starfarer.loading.specs.BaseWeaponSpec;
@@ -37,7 +38,7 @@ import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.OptionPanelAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
-
+import com.fs.starfarer.api.combat.CombatUIAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 import com.fs.starfarer.api.input.InputEventClass;
 import com.fs.starfarer.api.input.InputEventType;
@@ -65,6 +66,7 @@ public class UiUtil implements Opcodes {
 
     public static interface UiUtilInterface {
         public UIPanelAPI titleScreenStateGetScreenPanel(Object titleScreenState);
+        public UIPanelAPI combatUIGetScreenPanel(CombatUIAPI combatUI);
         public UIPanelAPI interactionDialogGetCore(Object interactionDialog);
 
         public UIPanelAPI campaignUIgetCore(Object campaignUI);
@@ -300,6 +302,7 @@ public class UiUtil implements Opcodes {
         Class<?> intelTabClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getIntelTab", EventsPanel.class));
         Class<?> intelTabPlanetsPanelClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getPlanetsPanel", intelTabClass));
         Class<?> zoomTrackerClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getZoomTracker", mapClass));
+        Class<?> combatUIClass = RolfLectionUtil.getReturnType(RolfLectionUtil.getMethod("getCombatUI", CombatEngine.class));
 
         String[] zoomTrackerMethodNames = getZoomTrackerMethodNames(zoomTrackerClass);
 
@@ -328,6 +331,7 @@ public class UiUtil implements Opcodes {
         }
 
         String titleScreenStateInternalName = Type.getInternalName(TitleScreenState.class);
+        String combatUIInternalName = Type.getInternalName(combatUIClass);
         String coreClassInternalName = Type.getInternalName(coreClass);
         String uiPanelInternalName = Type.getInternalName(uiPanelClass);
         String uiComponentInternalName = Type.getInternalName(uiComponentClass);
@@ -365,6 +369,7 @@ public class UiUtil implements Opcodes {
         String inputEventListInternalName = Type.getInternalName(inputEventListClass);
 
         String titleScreenStateDesc = Type.getDescriptor(TitleScreenState.class);
+        String combatUIAPIDesc = Type.getDescriptor(CombatUIAPI.class);
         String coreClassDesc = Type.getDescriptor(coreClass);
         String uiPanelClassDesc = Type.getDescriptor(uiPanelClass);
         String uiPanelAPIDesc = Type.getDescriptor(UIPanelAPI.class);
@@ -455,6 +460,36 @@ public class UiUtil implements Opcodes {
             mv.visitMethodInsn(
                 INVOKEVIRTUAL,
                 titleScreenStateInternalName,
+                "getScreenPanel",
+                "()" + uiPanelClassDesc,
+                false
+            );
+
+            mv.visitInsn(ARETURN);
+
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+
+        // public UIPanelAPI combatUIGetScreenPanel(CombatUIAPI combatUI) {
+        //     return ((combatUIClass)combatUI).getScreenPanel();
+        // }
+        {
+            MethodVisitor mv = cw.visitMethod(
+                ACC_PUBLIC,
+                "combatUIGetScreenPanel",
+                "(" + combatUIAPIDesc + ")" + uiPanelAPIDesc,
+                null,
+                null
+            );
+            mv.visitCode();
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, combatUIInternalName);
+
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                combatUIInternalName,
                 "getScreenPanel",
                 "()" + uiPanelClassDesc,
                 false
