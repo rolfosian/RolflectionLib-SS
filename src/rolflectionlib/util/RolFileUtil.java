@@ -20,16 +20,16 @@ public class RolFileUtil {
     private static final Object getParentFileMethod;
     private static final Object fileExistsMethod;
     private static final Object mkdirsMethod;
-    private static final Object faosFlushMethod;
     private static final Object faosCloseMethod;
 
     private static final Object baosCtor;
     private static final Object baosWriteMethod;
-    private static final Object baosFlushMethod;
     private static final Object baosToByteArrayMethod;
 
     private static final Object inputStreamAvailableMethod;
     private static final Object inputStreamReadMethod;
+
+    private static final Object outputStreamFlushMethod;
 
     private static final Object getResourceAsStreamMethod;
 
@@ -52,20 +52,20 @@ public class RolFileUtil {
                 }
             }
             faosWriteMethod = RolfLectionUtil.getMethodExplicit("write", faosClass, new Class<?>[]{byte[].class});
-            faosFlushMethod = RolfLectionUtil.getMethod("flush", faosClass, 0);
             faosCloseMethod = RolfLectionUtil.getMethod("close", faosClass, 0);
 
             Class<?> baosClass = Class.forName("java.io.ByteArrayOutputStream", false, Class.class.getClassLoader());
 
             baosCtor = RolfLectionUtil.getConstructor(baosClass, new Class<?>[0]);
             baosWriteMethod = RolfLectionUtil.getMethodExplicit("write", baosClass, new Class<?>[]{byte[].class, int.class, int.class});
-            baosFlushMethod = RolfLectionUtil.getMethod("flush", baosClass);
             baosToByteArrayMethod = RolfLectionUtil.getMethod("toByteArray", baosClass);
+
+            outputStreamFlushMethod = RolfLectionUtil.getMethod("flush", baosClass.getSuperclass());
             
             getResourceAsStreamMethod = RolfLectionUtil.getMethod("getResourceAsStream", ClassLoader.class);
             Class<?> inputStreamClass = RolfLectionUtil.getReturnType(getResourceAsStreamMethod);
             inputStreamAvailableMethod = RolfLectionUtil.getMethod("available", inputStreamClass);
-            inputStreamReadMethod = RolfLectionUtil.getMethod("read", inputStreamClass);
+            inputStreamReadMethod = RolfLectionUtil.getMethodExplicit("read", inputStreamClass, new Class<?>[] {byte[].class, int.class, int.class});
 
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -82,7 +82,7 @@ public class RolFileUtil {
 
         Object faos = RolfLectionUtil.instantiateClass(faosCtor, file);
         RolfLectionUtil.invokeMethodDirectly(faosWriteMethod, faos, data);
-        RolfLectionUtil.invokeMethodDirectly(faosFlushMethod, faos);
+        RolfLectionUtil.invokeMethodDirectly(outputStreamFlushMethod, faos);
         RolfLectionUtil.invokeMethodDirectly(faosCloseMethod, faos);
     }
 
@@ -114,7 +114,7 @@ public class RolFileUtil {
                 readCount++;
             }
             
-            RolfLectionUtil.invokeMethodDirectly(baosFlushMethod, outputStream);
+            RolfLectionUtil.invokeMethodDirectly(outputStreamFlushMethod, outputStream);
             if (readCount == 1) {
                 return data;
             }
