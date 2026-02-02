@@ -30,8 +30,8 @@ package org.objectweb.asm;
 // MINOR PATCH FOR STARSECTOR
 import rolflectionlib.util.RolfLectionUtil;
 
-// import java.lang.reflect.Constructor;
-// import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * A Java field or method type. This class can be used to make it easier to manipulate type and
@@ -529,6 +529,16 @@ public final class Type {
   /**
    * Returns the descriptor corresponding to the given constructor.
    *
+   * @param constructor a {@link Constructor} object.
+   * @return the descriptor of the given constructor.
+   */
+  public static String getConstructorDescriptor(final Constructor<?> constructor) {
+    return getConstructorDescriptor(constructor);
+  }
+
+  /**
+   * Returns the descriptor corresponding to the given constructor.
+   *
    * @param constructor a {@link Constructor} {@link Object}.
    * @return the descriptor of the given constructor.
    */                                           // patched param type to Object
@@ -558,6 +568,16 @@ public final class Type {
     stringBuilder.append(')');
     returnType.appendDescriptor(stringBuilder);
     return stringBuilder.toString();
+  }
+
+  /**
+   * Returns the descriptor corresponding to the given method.
+   *
+   * @param method a {@link Method} object.
+   * @return the descriptor of the given method.
+   */
+  public static String getMethodDescriptor(final Method method) {
+    return getMethodDescriptor(method);
   }
 
   /**
