@@ -5864,6 +5864,16 @@ public class UiUtil implements Opcodes {
         return interactionDialog == null ? utils.campaignUIgetCore(campaignUI) : utils.interactionDialogGetCore(interactionDialog);
     }
 
+    public static Object getCore() {
+        CampaignUIAPI campaignUI = Global.getSector().getCampaignUI();
+        InteractionDialogAPI interactionDialog = campaignUI.getCurrentInteractionDialog();
+        return interactionDialog == null ? utils.campaignUIgetCore(campaignUI) : utils.interactionDialogGetCore(interactionDialog);
+    }
+
+    public static UIPanelAPI getCurrentCoreTab() {
+        return utils.coreGetCurrentTab(getCore());
+    }
+
     public static void setButtonHook(ButtonAPI button, Runnable runBefore, Runnable runAfter) {
         Object oldListener = utils.buttonGetListener(button);
 
