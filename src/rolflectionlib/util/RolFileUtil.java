@@ -62,7 +62,7 @@ public class RolFileUtil {
 
             outputStreamFlushMethod = RolfLectionUtil.getMethod("flush", baosClass.getSuperclass());
             
-            getResourceAsStreamMethod = RolfLectionUtil.getMethod("getResourceAsStream", ClassLoader.class);
+            getResourceAsStreamMethod = RolfLectionUtil.getMethodExplicit("getResourceAsStream", ClassLoader.class, null);
             Class<?> inputStreamClass = RolfLectionUtil.getReturnType(getResourceAsStreamMethod);
             inputStreamAvailableMethod = RolfLectionUtil.getMethod("available", inputStreamClass);
             inputStreamReadMethod = RolfLectionUtil.getMethodExplicit("read", inputStreamClass, new Class<?>[] {byte[].class, int.class, int.class});
