@@ -120,12 +120,5 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/../../xstream-1.4.10.jar</systemPath>
     </dependency>
-    <dependency>
-      <groupId>local</groupId>
-      <artifactId>reflection</artifactId>
-      <version>1.0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/../NativeUI/jars/libs/RolflectionLib.jar</systemPath>
-    </dependency>
   </dependencies>
 </project>
